@@ -4,6 +4,7 @@ import { Group } from "three";
 import { boardPosition, TOKENS } from "../engine/boardData";
 import type { GameState, Player } from "../engine/types";
 import { sampleMovement, type Movement } from "../presentation/motion";
+import PlayerModel from "./PlayerModel";
 export default function PlayerToken({
   player,
   index,
@@ -53,50 +54,57 @@ export default function PlayerToken({
         <cylinderGeometry args={[0.19, 0.23, 0.09, 20]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      {player.token === "witch" ? (
-        <>
-          <mesh position={[0, 0.13, 0]}>
-            <coneGeometry args={[0.17, 0.5, 16]} />
-            <meshStandardMaterial color="#8771a8" />
-          </mesh>
-          <mesh>
-            <cylinderGeometry args={[0.26, 0.26, 0.035, 20]} />
-            <meshStandardMaterial color="#65527e" />
-          </mesh>
-        </>
-      ) : (
-        <>
-          <mesh
-            scale={player.token === "ghost" ? [0.85, 1.2, 0.85] : [1, 0.9, 1]}
-          >
-            <sphereGeometry args={[0.22, 16, 12]} />
-            <meshStandardMaterial color={color} />
-          </mesh>
-          {[-0.075, 0.075].map((x) => (
-            <mesh key={x} position={[x, 0.04, 0.18]}>
-              <sphereGeometry args={[0.035, 8, 8]} />
-              <meshStandardMaterial color="#211b22" />
-            </mesh>
-          ))}
-          {player.token === "pumpkin" && (
-            <mesh position={[0, 0.23, 0]} rotation={[0.2, 0, 0.2]}>
-              <cylinderGeometry args={[0.03, 0.035, 0.13, 6]} />
-              <meshStandardMaterial color="#6e8750" />
-            </mesh>
-          )}
-          {player.token === "vampire" &&
-            [-1, 1].map((x) => (
+      <PlayerModel
+        token={player.token}
+        fallback={
+          player.token === "witch" ? (
+            <>
+              <mesh position={[0, 0.13, 0]}>
+                <coneGeometry args={[0.17, 0.5, 16]} />
+                <meshStandardMaterial color="#8771a8" />
+              </mesh>
+              <mesh>
+                <cylinderGeometry args={[0.26, 0.26, 0.035, 20]} />
+                <meshStandardMaterial color="#65527e" />
+              </mesh>
+            </>
+          ) : (
+            <>
               <mesh
-                key={x}
-                position={[x * 0.24, 0, 0]}
-                rotation={[0, 0, x * -0.5]}
+                scale={
+                  player.token === "ghost" ? [0.85, 1.2, 0.85] : [1, 0.9, 1]
+                }
               >
-                <coneGeometry args={[0.16, 0.36, 3]} />
+                <sphereGeometry args={[0.22, 16, 12]} />
                 <meshStandardMaterial color={color} />
               </mesh>
-            ))}
-        </>
-      )}
+              {[-0.075, 0.075].map((x) => (
+                <mesh key={x} position={[x, 0.04, 0.18]}>
+                  <sphereGeometry args={[0.035, 8, 8]} />
+                  <meshStandardMaterial color="#211b22" />
+                </mesh>
+              ))}
+              {player.token === "pumpkin" && (
+                <mesh position={[0, 0.23, 0]} rotation={[0.2, 0, 0.2]}>
+                  <cylinderGeometry args={[0.03, 0.035, 0.13, 6]} />
+                  <meshStandardMaterial color="#6e8750" />
+                </mesh>
+              )}
+              {player.token === "vampire" &&
+                [-1, 1].map((x) => (
+                  <mesh
+                    key={x}
+                    position={[x * 0.24, 0, 0]}
+                    rotation={[0, 0, x * -0.5]}
+                  >
+                    <coneGeometry args={[0.16, 0.36, 3]} />
+                    <meshStandardMaterial color={color} />
+                  </mesh>
+                ))}
+            </>
+          )
+        }
+      />
     </group>
   );
 }

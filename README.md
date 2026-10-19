@@ -39,3 +39,15 @@ This is a local alpha. Passing a purchase skips an auction. Cards currently choo
 The multiplayer transport belongs in `src/multiplayer` in Phase 4: bind a connection to a player identity, validate the message schema and revision, let only the host call `applyAction`, and broadcast snapshots. Never trust a client-provided identity, dice result, money value, or state snapshot.
 
 See [ROADMAP.md](ROADMAP.md) for milestones and acceptance gates. Official framework references: [Vite](https://vite.dev/guide/), [React Three Fiber Canvas](https://r3f.docs.pmnd.rs/api/canvas), [animation hooks](https://r3f.docs.pmnd.rs/api/hooks).
+
+## Artwork and player models
+
+Board sources live in `2d-textures`: `properties`, `corners`, and `map-center`. All 40 spaces map to these templates in `src/three/boardArtwork.ts`; names, prices and ownership remain live game data. Tile proportions match the 307 × 512 property images, with square corners. The cemetery image replaces the prototype center decorations.
+
+The seven supplied characters are selectable for a match of up to four players. `src/data/playerAssets.json` maps persistent token IDs to the actual GLBs. Existing saves retain their token IDs. Note that `jack-olantern.glb` depicts the black cat and `sparks.glb` depicts the pumpkin character; the supplied filenames are preserved.
+
+Original GLBs stay in `3d-models/figurines` locally. They total about 272 MB and are excluded from Git; the optimized copies in `assets/players` are tracked instead. Those web copies total about 8.5 MB. A clean checkout works with these copies even without the originals. To replace a model, put its original GLB back in `3d-models/figurines` using the catalog filename and run `npm run dev` or `npm run build`.
+
+The predev/prebuild scripts prepare assets automatically. `scripts/prepare-models.mjs` hashes inputs, simplifies meshes, resizes textures to 1024 pixels, and applies WebP/Meshopt compression using [glTF Transform](https://gltf-transform.dev/). `scripts/sync-assets.mjs` prepares the cemetery WebP and copies the runtime assets into `public/assets`. Original artwork is preserved. Runtime files and the generated import catalog are ignored in Git and regenerated before Vite starts or builds.
+
+Models load lazily, normalize to the board scale, and inherit the existing movement and camera sequences. A procedural token remains available while a model loads or if it fails. The supplied GLBs contain static figures, so movement uses the game's existing hop/path animation rather than embedded skeletal clips.

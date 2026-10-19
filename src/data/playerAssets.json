@@ -1,0 +1,9 @@
+{
+  "pumpkin": { "file": "jack-olantern.glb", "label": "Jack-o’-lantern" },
+  "ghost": { "file": "boo.glb", "label": "Boo" },
+  "vampire": { "file": "vex.glb", "label": "Vex" },
+  "witch": { "file": "hexie.glb", "label": "Hexie" },
+  "rattle": { "file": "rattle.glb", "label": "Rattle" },
+  "sparks": { "file": "sparks.glb", "label": "Sparks" },
+  "warps": { "file": "warps.glb", "label": "Warps" }
+}

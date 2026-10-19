@@ -5,7 +5,15 @@ const integer = z.number().int().nonnegative();
 const player = z.object({
   id: z.string(),
   name: z.string().min(1).max(24),
-  token: z.enum(["pumpkin", "ghost", "vampire", "witch"]),
+  token: z.enum([
+    "pumpkin",
+    "ghost",
+    "vampire",
+    "witch",
+    "rattle",
+    "sparks",
+    "warps",
+  ]),
   position: integer.max(39),
   money: integer,
   propertyIds: z.array(integer.max(39)),

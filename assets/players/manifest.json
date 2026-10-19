@@ -1,0 +1,44 @@
+{
+  "jack-olantern.glb": {
+    "hash": "5ee98c0f026b161c1d0adf21d64c37b8392e01727547822e94a1a1ad262c2600",
+    "sourceBytes": 24164144,
+    "webBytes": 785820,
+    "vertices": 39657
+  },
+  "boo.glb": {
+    "hash": "88d513382d7ed07c37f491f5ff46983ed4669491567f1ed2d9e941b088f72f00",
+    "sourceBytes": 25563064,
+    "webBytes": 834352,
+    "vertices": 40431
+  },
+  "vex.glb": {
+    "hash": "633bc13d5bac506dcba16bd002b8a578b4ab7435ef602ef828330b8ad0797c22",
+    "sourceBytes": 42361120,
+    "webBytes": 1339760,
+    "vertices": 69697
+  },
+  "hexie.glb": {
+    "hash": "9995bf8250f8a7a7ddfd5de46fee0cbd8be3e803ae9cc59ab1d8e05463d478ff",
+    "sourceBytes": 56418108,
+    "webBytes": 1748948,
+    "vertices": 94859
+  },
+  "rattle.glb": {
+    "hash": "9527552aa7b0312b5520489597977df449f120b7afe44913f91a9cb8ec85c15b",
+    "sourceBytes": 38329992,
+    "webBytes": 1190612,
+    "vertices": 62478
+  },
+  "sparks.glb": {
+    "hash": "b4b1cf3969709b11fa217a5e1385f15a3cb238abb0b521c66f335150c85fcaa3",
+    "sourceBytes": 34310904,
+    "webBytes": 1147856,
+    "vertices": 54947
+  },
+  "warps.glb": {
+    "hash": "bdf28f97eba8e5c587e357ca6965309a45550abd3eb696984b088063493aa4cf",
+    "sourceBytes": 51193732,
+    "webBytes": 1430768,
+    "vertices": 90034
+  }
+}

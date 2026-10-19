@@ -30,21 +30,16 @@ try {
     "Four player inputs missing",
   );
   await page
-    .getByRole("button", { name: "Player 1: Witch", exact: true })
+    .getByRole("button", { name: "Player 1: Hexie", exact: true })
     .click();
   await page.getByRole("button", { name: "Enter the neighborhood" }).click();
   await page.getByRole("button", { name: "Skip camera tour" }).click();
   for (let attempt = 0; attempt < 40; attempt++) {
-    const start = page.getByRole("button", {
-      name: "Start playing",
-      exact: true,
-    });
-    if (await start.count()) {
-      await start.click();
-      break;
-    }
-    await page.getByRole("button", { name: /roll for first$/ }).click();
-    await page.waitForTimeout(850);
+    const phase=await page.evaluate(()=>JSON.parse(localStorage.getItem('gambilopoly-local-v1')).state.phase);
+    if(phase!=='opening')break;
+    // Wait for the same button to finish its reveal animation; its label can
+    // change to Start playing while a slow WebGL frame is being rendered.
+    await page.locator('.opening-order > .game-action').click();
   }
   await page.getByRole("button", { name: "Roll the dice" }).waitFor();
   await page.waitForTimeout(1800);

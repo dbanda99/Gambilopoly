@@ -1,7 +1,56 @@
-import { useMemo } from "react";
-import { CanvasTexture } from "three";
-import { boardPosition } from "../engine/boardData";
+import { useEffect, useMemo } from "react";
+import { CanvasTexture, SRGBColorSpace } from "three";
+import { boardPosition, TILE_DEPTH, TILE_WIDTH } from "../engine/boardData";
 import type { BoardSpace } from "../engine/types";
+import { artworkFor, loadArtwork } from "./boardArtwork";
+
+function labels(canvas: HTMLCanvasElement, space: BoardSpace) {
+  const c = canvas.getContext("2d")!,
+    width = canvas.width;
+  c.textAlign = "center";
+  c.fillStyle = "#f6efde";
+  if (space.type === "corner") {
+    c.fillStyle = "#17141bd9";
+    c.fillRect(8, 451, width - 16, 53);
+    c.fillStyle = "#f6efde";
+    c.font = "bold 23px Georgia";
+    c.fillText(
+      space.id === 0 ? "Witching Hour · Collect $200" : space.name,
+      width / 2,
+      485,
+      width - 30,
+    );
+    return;
+  }
+  const property = space.type === "property";
+  c.font = `bold ${property ? 27 : 25}px Georgia`;
+  const words = space.name.split(" "),
+    lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (c.measureText(next).width > width - 36 && line) {
+      lines.push(line);
+      line = word;
+    } else line = next;
+  }
+  lines.push(line);
+  const top = property ? 133 : 49;
+  lines.forEach((text, i) =>
+    c.fillText(text, width / 2, top + i * 33, width - 28),
+  );
+  c.font = "bold 27px sans-serif";
+  c.fillText(
+    space.price
+      ? `$${space.price}`
+      : space.type === "tax"
+        ? `Pay $${space.amount}`
+        : "Draw a card",
+    width / 2,
+    474,
+    width - 24,
+  );
+}
 export default function BoardTile({
   space,
   ownerColor,
@@ -11,67 +60,71 @@ export default function BoardTile({
   ownerColor?: string;
   onSelect: () => void;
 }) {
-  const [x, z] = boardPosition(space.id);
-  const texture = useMemo(() => {
+  const [x, z] = boardPosition(space.id),
+    corner = space.type === "corner";
+  const { canvas, texture } = useMemo(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
+    canvas.width = corner ? 512 : 307;
+    canvas.height = 512;
     const c = canvas.getContext("2d")!;
-    c.fillStyle = space.type === "corner" ? "#c6bd9c" : "#ded5b8";
-    c.fillRect(0, 0, 256, 256);
-    if (space.color) {
-      c.fillStyle = space.color;
-      c.fillRect(0, 0, 256, 48);
-    }
-    c.fillStyle = "#36342b";
-    c.textAlign = "center";
-    c.font = "bold 25px Georgia";
-    const words = space.name.split(" ");
-    words.forEach((w, i) => c.fillText(w, 128, 94 + i * 30));
-    c.font = "22px sans-serif";
-    c.fillText(
-      space.price
-        ? `$${space.price}`
-        : space.id === 0
-          ? "+ $200"
-          : space.type === "chance"
-            ? "?"
-            : space.type === "community"
-              ? "✦"
-              : space.type === "tax"
-                ? `− $${space.amount}`
-                : "",
-      128,
-      218,
-    );
-    return new CanvasTexture(canvas);
-  }, [space]);
+    c.fillStyle = "#3d3d3d";
+    c.fillRect(0, 0, canvas.width, 512);
+    labels(canvas, space);
+    const texture = new CanvasTexture(canvas);
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = 4;
+    return { canvas, texture };
+  }, [space, corner]);
+  useEffect(() => {
+    let active = true;
+    loadArtwork(artworkFor(space))
+      .then((image) => {
+        if (!active) return;
+        canvas
+          .getContext("2d")!
+          .drawImage(image, 0, 0, canvas.width, canvas.height);
+        labels(canvas, space);
+        texture.needsUpdate = true;
+      })
+      .catch(() => {
+        /* Keep the labeled tile playable if an image cannot load. */
+      });
+    return () => {
+      active = false;
+    };
+  }, [space, canvas, texture]);
+  useEffect(() => () => texture.dispose(), [texture]);
   const rotation =
     space.id <= 10
       ? 0
       : space.id <= 20
-        ? Math.PI / 2
+        ? -Math.PI / 2
         : space.id <= 30
           ? Math.PI
-          : -Math.PI / 2;
+          : Math.PI / 2;
+  const width = (corner ? TILE_DEPTH : TILE_WIDTH) - 0.015,
+    depth = TILE_DEPTH - 0.015;
+  const select = (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    onSelect();
+  };
   return (
     <group position={[x, 0, z]} rotation={[0, rotation, 0]}>
-      <mesh
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-      >
-        <boxGeometry args={[0.96, 0.16, 0.96]} />
-        <meshStandardMaterial color={ownerColor ?? "#585d45"} />
+      <mesh onClick={select} receiveShadow>
+        <boxGeometry args={[width, 0.16, depth]} />
+        <meshStandardMaterial color={ownerColor ?? "#25232b"} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.085, 0]}>
-        <planeGeometry args={[0.92, 0.92]} />
+      <mesh
+        onClick={select}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.085, 0]}
+      >
+        <planeGeometry args={[width - 0.01, depth - 0.01]} />
         <meshBasicMaterial map={texture} />
       </mesh>
       {ownerColor && (
-        <mesh position={[0, 0.11, 0.39]}>
-          <boxGeometry args={[0.8, 0.035, 0.07]} />
+        <mesh position={[0, 0.105, depth / 2 - 0.045]}>
+          <boxGeometry args={[width - 0.05, 0.035, 0.06]} />
           <meshBasicMaterial color={ownerColor} />
         </mesh>
       )}

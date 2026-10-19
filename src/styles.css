@@ -374,10 +374,17 @@ h2 {
 }
 .token-choices {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 9px;
 }
 .token-choices button {
+  flex: 0 0 calc(25% - 6px);
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
   position: relative;
   border: 1px solid #3c422f;
   background: #252b1d;
@@ -385,6 +392,13 @@ h2 {
   padding: 6px 9px;
   font-size: 19px;
   line-height: 1;
+}
+.token-choice-label {
+  font-size: 8px;
+  line-height: 1.3;
+  color: #bec6ac;
+  font-weight: 500;
+  white-space: nowrap;
 }
 .token-choices .chosen {
   border-color: #daa568;

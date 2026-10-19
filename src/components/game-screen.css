@@ -16,7 +16,7 @@ body.in-game {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
-  background: #566044;
+  background: #292532;
   color: #eee9db;
   isolation: isolate;
   --hud-gap: clamp(16px, 2vw, 34px);

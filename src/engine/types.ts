@@ -1,4 +1,5 @@
-export type Token = "pumpkin" | "ghost" | "vampire" | "witch";
+export type Token =
+  "pumpkin" | "ghost" | "vampire" | "witch" | "rattle" | "sparks" | "warps";
 export interface Player {
   id: string;
   name: string;

@@ -24,7 +24,8 @@ export default function Lobby() {
   function select(index: number, token: Token) {
     const next = [...tokens],
       other = next.indexOf(token);
-    [next[index], next[other]] = [next[other], next[index]];
+    if (other >= 0) [next[index], next[other]] = [next[other], next[index]];
+    else next[index] = token;
     setTokens(next);
   }
   return (
@@ -117,6 +118,9 @@ export default function Lobby() {
                       className={tokens[i] === t ? "chosen" : ""}
                     >
                       {TOKENS[t].icon}
+                      <span className="token-choice-label">
+                        {TOKENS[t].label}
+                      </span>
                       {tokens[i] === t && <Check size={10} />}
                     </button>
                   ))}

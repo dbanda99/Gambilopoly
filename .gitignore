@@ -5,3 +5,6 @@ test-results/
 playwright-report/
 .openai/*.tar.gz
 *.tsbuildinfo
+/public/assets/
+/src/generated/
+/3d-models/figurines/*.glb

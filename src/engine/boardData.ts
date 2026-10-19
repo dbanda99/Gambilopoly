@@ -40,16 +40,27 @@ export const BOARD: BoardSpace[] = Array.from({ length: 40 }, (_, id) => {
   }
   return { id, ...special[id] } as BoardSpace;
 });
+// Nine rectangular spaces fit between the square corners on each side.
+// Keep the corner centers at +/-5 so existing camera paths remain compatible.
+export const TILE_DEPTH = 10 / (1 + 9 * (307 / 512));
+export const TILE_WIDTH = TILE_DEPTH * (307 / 512);
+export const BOARD_SIZE = 10 + TILE_DEPTH;
+export const CENTER_SIZE = 9 * TILE_WIDTH;
 export function boardPosition(id: number): [number, number] {
   const n = ((id % 40) + 40) % 40;
-  if (n <= 10) return [5 - n, 5];
-  if (n <= 20) return [-5, 15 - n];
-  if (n <= 30) return [n - 25, -5];
-  return [5, n - 35];
+  const along = (coordinate: number) =>
+    n % 10 === 0 ? coordinate : coordinate * TILE_WIDTH;
+  if (n <= 10) return [along(5 - n), 5];
+  if (n <= 20) return [-5, along(15 - n)];
+  if (n <= 30) return [along(n - 25), -5];
+  return [5, along(n - 35)];
 }
 export const TOKENS = {
-  pumpkin: { icon: "🎃", label: "Pumpkin", color: "#f0a35c" },
-  ghost: { icon: "👻", label: "Ghost", color: "#9dccbd" },
-  vampire: { icon: "🦇", label: "Vampire", color: "#bb9de0" },
-  witch: { icon: "🧙", label: "Witch", color: "#da91a2" },
+  pumpkin: { icon: "🐈‍⬛", label: "Jack-o’-lantern", color: "#f0a35c" },
+  ghost: { icon: "👻", label: "Boo", color: "#9dccbd" },
+  vampire: { icon: "🦇", label: "Vex", color: "#bb9de0" },
+  witch: { icon: "🧙", label: "Hexie", color: "#da91a2" },
+  rattle: { icon: "💀", label: "Rattle", color: "#dacb9c" },
+  sparks: { icon: "🎃", label: "Sparks", color: "#b4c478" },
+  warps: { icon: "🧟", label: "Warps", color: "#90b4cf" },
 };
