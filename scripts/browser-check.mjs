@@ -35,6 +35,15 @@ try {
   await page.getByRole("button", { name: "Enter the neighborhood" }).click();
   await page.getByRole("button", { name: "Roll the dice" }).waitFor();
   await page.waitForTimeout(1800);
+  const fullViewport = await page.locator(".game-screen").boundingBox();
+  assert(
+    fullViewport.width === 1440 && fullViewport.height === 1000,
+    "Game does not fill the desktop viewport",
+  );
+  assert(
+    await page.locator(".header").isHidden(),
+    "Page header is still visible during gameplay",
+  );
   assert((await page.locator("canvas").count()) === 1, "3D canvas missing");
   await page.screenshot({
     path: "test-results/desktop-board.png",
@@ -90,10 +99,98 @@ try {
     path: "test-results/mobile-board.png",
     fullPage: true,
   });
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollHeight <= window.innerHeight,
+    ),
+    "Gameplay scrolls vertically on mobile",
+  );
+  const dock = await page.locator(".game-turn-dock").boundingBox();
+  assert(
+    dock.x >= 0 && dock.x + dock.width <= 390 && dock.y + dock.height <= 844,
+    "Turn controls leave the mobile screen",
+  );
   await page.getByRole("button", { name: "How to play" }).click();
   await page.getByRole("dialog").waitFor();
   await page.getByRole("button", { name: "Close rules" }).click();
-  await page.getByRole("button", { name: "New game", exact: true }).click();
+  // Resume a valid landing fixture so the purchase panel is checked on every run.
+  await page.evaluate(() => {
+    const save = JSON.parse(localStorage.getItem("gambilopoly-local-v1"));
+    const s = save.state,
+      p = s.players[s.currentPlayerIndex];
+    p.position = 3;
+    s.phase = "purchase";
+    s.movement = null;
+    s.dice = [1, 2];
+    s.extraTurn = false;
+    s.revision++;
+    localStorage.setItem("gambilopoly-local-v1", JSON.stringify(save));
+  });
+  await page.reload();
+  await page.getByRole("button", { name: "Resume saved local game" }).click();
+  await page.getByRole("region", { name: "Property purchase" }).waitFor();
+  for (const [name, width, height] of [
+    ["portrait", 390, 844],
+    ["small-phone", 375, 667],
+    ["landscape", 844, 390],
+    ["desktop", 1440, 1000],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.waitForTimeout(600);
+    for (const button of await page
+      .locator(".game-screen .game-action,.game-tools button,.player-badge")
+      .all()) {
+      if (!(await button.isVisible())) continue;
+      const box = await button.boundingBox();
+      assert(
+        box.x >= 0 &&
+          box.y >= 0 &&
+          box.x + box.width <= width + 1 &&
+          box.y + box.height <= height + 1,
+        `${name}: control outside viewport`,
+      );
+    }
+    const deed = await page.locator(".purchase-overlay").boundingBox();
+    const turn = await page.locator(".game-turn-dock").boundingBox();
+    assert(
+      deed.y >= 0 && deed.y + deed.height < turn.y,
+      `${name}: purchase card overlaps turn dock`,
+    );
+    await page.screenshot({ path: `test-results/${name}-purchase.png` });
+  }
+  const beforePurchase = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("gambilopoly-local-v1")).state,
+  );
+  await page.getByRole("button", { name: "Buy for $60" }).click();
+  await page.getByRole("button", { name: "End turn", exact: true }).waitFor();
+  const bought = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("gambilopoly-local-v1")).state,
+  );
+  assert(
+    bought.players[bought.currentPlayerIndex].money ===
+      beforePurchase.players[beforePurchase.currentPlayerIndex].money - 60,
+    "Purchase did not debit cash",
+  );
+  assert(
+    bought.properties[3].ownerId ===
+      bought.players[bought.currentPlayerIndex].id,
+    "Purchase did not assign ownership",
+  );
+  await page.locator(".player-badge.is-current").click();
+  await page.getByRole("button", { name: "Cobweb Cottage" }).click();
+  await page.getByRole("dialog").waitFor();
+  await page.getByRole("button", { name: "Close property" }).click();
+  await page.getByRole("button", { name: "Close player properties" }).click();
+  (await page.getByRole("button", { name: "Top view", exact: true }).count())
+    ? await page.getByRole("button", { name: "Top view", exact: true }).click()
+    : await page
+        .getByRole("button", { name: "Angled view", exact: true })
+        .click();
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "test-results/desktop-angled-board.png" });
+  await page
+    .getByRole("button", { name: "Match options", exact: true })
+    .click();
   await page.getByRole("button", { name: "Set up a new game" }).click();
   await page.screenshot({
     path: "test-results/mobile-lobby.png",

@@ -5,6 +5,7 @@ import { BOARD, TOKENS } from "../engine/boardData";
 import type { GameState } from "../engine/types";
 import BoardTile from "./BoardTile";
 import PlayerToken from "./PlayerToken";
+import CameraRig from "./CameraRig";
 class BoardBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { failed: boolean }
@@ -66,14 +67,22 @@ export default function GameBoard({
     <BoardBoundary fallback={fallback}>
       <Suspense fallback={<div className="loading">Opening the gates…</div>}>
         <Canvas
-          key={String(topDown)}
           shadows
           dpr={[1, 1.5]}
           camera={{ position: topDown ? [0, 19, 0.01] : [11, 15, 14], fov: 40 }}
           fallback={fallback}
         >
-          <color attach="background" args={["#24291f"]} />
+          <color attach="background" args={["#566044"]} />
+          <CameraRig topDown={topDown} />
           <ambientLight intensity={1.7} />
+          <mesh
+            position={[0, -0.42, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+          >
+            <planeGeometry args={[200, 200]} />
+            <meshStandardMaterial color="#566044" roughness={1} />
+          </mesh>
           <directionalLight
             position={[5, 12, 3]}
             intensity={2.3}
@@ -135,8 +144,8 @@ export default function GameBoard({
           <OrbitControls
             makeDefault
             enablePan={false}
-            minDistance={11}
-            maxDistance={26}
+            minDistance={12}
+            maxDistance={80}
             minPolarAngle={0.05}
             maxPolarAngle={Math.PI / 2.4}
             target={[0, 0, 0]}

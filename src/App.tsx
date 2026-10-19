@@ -1,25 +1,14 @@
 import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  BookOpen,
-  ChevronDown,
-  Dices,
-  Flag,
-  Maximize2,
-  Moon,
-  RotateCcw,
-  X,
-} from "lucide-react";
+import { ArrowRight, BookOpen, Moon, X } from "lucide-react";
 import Lobby from "./components/Lobby";
 import PropertyCard from "./components/PropertyCard";
-import GameBoard from "./three/GameBoard";
-import { BOARD, TOKENS } from "./engine/boardData";
+import GameScreen from "./components/GameScreen";
 import { useGame } from "./store";
 export default function App() {
   const { state, dispatch, error, clearError } = useGame();
   const [rules, setRules] = useState(false),
     [selected, setSelected] = useState<number | null>(null),
-    [topDown, setTopDown] = useState(false),
+    [topDown, setTopDown] = useState(true),
     [moving, setMoving] = useState(false),
     [leave, setLeave] = useState(false);
   useEffect(() => {
@@ -34,11 +23,15 @@ export default function App() {
     );
     return () => clearTimeout(t);
   }, [state?.movement?.revision]);
+  useEffect(() => {
+    document.body.classList.toggle("in-game", !!state);
+    return () => document.body.classList.remove("in-game");
+  }, [!!state]);
   const player = state?.players[state.currentPlayerIndex];
   const action = (type: "roll" | "buy" | "pass" | "end" | "bail" | "resign") =>
     dispatch({ type, playerId: player!.id });
   return (
-    <div className="app">
+    <div className={`app ${state ? "is-playing" : ""}`}>
       <header className="header">
         <a
           href="./"
@@ -67,223 +60,16 @@ export default function App() {
       {!state ? (
         <Lobby />
       ) : (
-        <main className="game-layout">
-          <div className="game-heading">
-            <div>
-              <span className="eyebrow">THE NIGHT IS YOURS</span>
-              <h1>The neighborhood</h1>
-            </div>
-            <button
-              className="secondary compact"
-              onClick={() => setLeave(true)}
-            >
-              <RotateCcw size={14} /> New game
-            </button>
-          </div>
-          <section className="board-panel">
-            <div className="board-toolbar">
-              <span>
-                <span className="status-dot" /> LOCAL PASS & PLAY
-              </span>
-              <button
-                onClick={() => setTopDown(!topDown)}
-                className="board-view"
-              >
-                <Maximize2 size={14} />
-                {topDown ? "Angled view" : "Top view"}
-              </button>
-            </div>
-            <div className="board-canvas">
-              <GameBoard
-                state={state}
-                onSelect={setSelected}
-                topDown={topDown}
-              />
-              <div className="board-title">
-                GAMBILOPOLY<span>WELCOME TO THE NEIGHBORHOOD</span>
-              </div>
-            </div>
-            <div className="board-footer">
-              <span>Drag to orbit · Pinch or scroll to zoom</span>
-              <span>
-                Tap a property to explore <ArrowRight size={13} />
-              </span>
-            </div>
-          </section>
-          <aside className="game-sidebar">
-            <section className="turn-panel">
-              <div className="turn-label">
-                <span className="eyebrow">
-                  {state.status === "finished"
-                    ? "THE NIGHT HAS A WINNER"
-                    : "YOUR TURN"}
-                </span>
-                <span>TURN {state.revision + 1}</span>
-              </div>
-              <div className="current-player">
-                <span
-                  className="avatar"
-                  style={{ background: TOKENS[player!.token].color + "22" }}
-                >
-                  {TOKENS[player!.token].icon}
-                </span>
-                <div>
-                  <h2>
-                    {state.status === "finished"
-                      ? state.players.find((p) => !p.bankrupt)?.name
-                      : player!.name}
-                  </h2>
-                  <p>
-                    {moving
-                      ? "Taking a moonlit stroll…"
-                      : player!.inJail
-                        ? "Waiting in the Dungeon"
-                        : BOARD[player!.position].name}
-                  </p>
-                </div>
-              </div>
-              <div className="dice-row">
-                {(state.dice ?? [null, null]).map((n, i) => (
-                  <div
-                    key={i}
-                    className={`die ${moving ? "rolling" : ""}`}
-                    aria-label={`Die ${i + 1}: ${n ?? "not rolled"}`}
-                  >
-                    {n ? (
-                      ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][n]
-                    ) : (
-                      <Dices size={26} />
-                    )}
-                  </div>
-                ))}
-                <span>
-                  {state.dice
-                    ? `${state.dice[0] + state.dice[1]} spaces`
-                    : "Feeling lucky?"}
-                </span>
-              </div>
-              {state.status === "finished" ? (
-                <p className="winner">
-                  A frightfully good fortune. Start a new game to play again.
-                </p>
-              ) : (
-                <>
-                  {state.phase === "roll" && (
-                    <>
-                      <button
-                        className="primary"
-                        disabled={moving}
-                        onClick={() => action("roll")}
-                      >
-                        <Dices size={18} /> Roll the dice{" "}
-                        <ArrowRight size={17} />
-                      </button>
-                      {player!.inJail && (
-                        <button
-                          className="resume"
-                          onClick={() => action("bail")}
-                        >
-                          Pay $50 bail
-                        </button>
-                      )}
-                    </>
-                  )}
-                  {state.phase === "purchase" && (
-                    <div className="purchase-box">
-                      <p>
-                        <strong>{BOARD[player!.position].name}</strong>
-                        <br />A new haunt for your collection?
-                      </p>
-                      <button
-                        className="primary"
-                        disabled={
-                          moving ||
-                          player!.money < BOARD[player!.position].price!
-                        }
-                        onClick={() => action("buy")}
-                      >
-                        Buy for ${BOARD[player!.position].price}{" "}
-                        <ArrowRight size={16} />
-                      </button>
-                      <button
-                        className="resume"
-                        disabled={moving}
-                        onClick={() => action("pass")}
-                      >
-                        Pass for now
-                      </button>
-                    </div>
-                  )}
-                  {state.phase === "end" && (
-                    <button
-                      className="primary"
-                      disabled={moving}
-                      onClick={() => action("end")}
-                    >
-                      {state.extraTurn ? "Doubles! Roll again" : "End turn"}{" "}
-                      <ArrowRight size={17} />
-                    </button>
-                  )}
-                </>
-              )}
-              <p className="turn-note">
-                {state.phase === "purchase"
-                  ? "Passing skips the auction in this alpha."
-                  : "Pass Witching Hour to collect $200."}
-              </p>
-            </section>
-            <section className="players-panel">
-              <div className="section-label">
-                THE GHOULS <span>{state.players.length} PLAYERS</span>
-              </div>
-              {state.players.map((p, i) => (
-                <div
-                  className={`player-row ${i === state.currentPlayerIndex ? "active" : ""} ${p.bankrupt ? "bankrupt" : ""}`}
-                  key={p.id}
-                >
-                  <span
-                    className="small-avatar"
-                    style={{ background: TOKENS[p.token].color + "20" }}
-                  >
-                    {TOKENS[p.token].icon}
-                  </span>
-                  <div>
-                    <strong>
-                      {p.name}
-                      {i === state.currentPlayerIndex && (
-                        <span className="turn-dot" />
-                      )}
-                    </strong>
-                    <small>
-                      {p.bankrupt
-                        ? "Bankrupt"
-                        : `${p.propertyIds.length} properties${p.inJail ? " · In jail" : ""}`}
-                    </small>
-                  </div>
-                  <span className="balance">${p.money.toLocaleString()}</span>
-                </div>
-              ))}
-            </section>
-            <section className="activity">
-              <div className="section-label">
-                WHISPERS OF THE NIGHT <ChevronDown size={14} />
-              </div>
-              <div className="activity-list" aria-live="polite">
-                {state.log.slice(0, 6).map((line, i) => (
-                  <p key={`${state.revision}-${i}`}>
-                    <span />
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </section>
-            {state.status === "playing" && (
-              <button className="resign" onClick={() => setLeave(true)}>
-                <Flag size={13} /> Match options
-              </button>
-            )}
-          </aside>
-        </main>
+        <GameScreen
+          state={state}
+          moving={moving}
+          topDown={topDown}
+          onView={() => setTopDown(!topDown)}
+          onSelect={setSelected}
+          onOptions={() => setLeave(true)}
+          onRules={() => setRules(true)}
+          onAction={action}
+        />
       )}
       <footer className="footer">
         <span>A LITTLE SPOOKY. A LITTLE STRATEGIC.</span>

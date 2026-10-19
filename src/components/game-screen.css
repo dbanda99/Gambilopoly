@@ -1,0 +1,877 @@
+.app.is-playing {
+  max-width: none;
+  padding: 0;
+}
+body.in-game {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.app.is-playing > .header,
+.app.is-playing > .footer {
+  display: none;
+}
+.game-screen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #566044;
+  color: #eee9db;
+  isolation: isolate;
+  --hud-gap: clamp(16px, 2vw, 34px);
+}
+.game-world {
+  position: absolute;
+  inset: 0;
+}
+.game-world > div {
+  height: 100% !important;
+}
+.game-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    0deg,
+    #10180f99,
+    transparent 26%,
+    transparent 85%,
+    #10180f3b
+  );
+}
+.game-tools {
+  position: absolute;
+  top: max(var(--hud-gap), env(safe-area-inset-top));
+  left: max(var(--hud-gap), env(safe-area-inset-left));
+  display: flex;
+  gap: 9px;
+  z-index: 2;
+}
+.game-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid #f0edcf33;
+  background: #1c251ee8;
+  color: #f1efdd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px #0c140d33;
+  flex-shrink: 0;
+  backdrop-filter: blur(12px);
+}
+.game-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.game-icon.is-selected {
+  background: #efb16f;
+  color: #25271c;
+}
+.game-wordmark {
+  position: absolute;
+  left: var(--hud-gap);
+  bottom: var(--hud-gap);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 8px #0006;
+  pointer-events: none;
+}
+.game-wordmark > span {
+  color: #efb16f;
+}
+.game-wordmark small {
+  display: block;
+  font-family: "DM Sans", sans-serif;
+  font-size: 7px;
+  letter-spacing: 2.5px;
+  font-weight: 500;
+  color: #d3dcc4;
+  margin-top: 4px;
+}
+.game-roster {
+  position: absolute;
+  right: max(var(--hud-gap), env(safe-area-inset-right));
+  top: 5%;
+  bottom: 17%;
+  width: 152px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 12px;
+  pointer-events: none;
+}
+.player-badge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 0;
+  background: none;
+  color: #f5f0e3;
+  padding: 4px 0;
+  pointer-events: auto;
+  width: 100%;
+  filter: drop-shadow(0 6px 7px #14200e66);
+}
+.badge-token {
+  font-size: 35px;
+  height: 63px;
+  width: 72px;
+  border-radius: 50% 50% 20% 20%;
+  background: #eee9da;
+  border: 3px solid var(--player-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: -10px;
+  padding-bottom: 5px;
+  z-index: 1;
+}
+.badge-name {
+  background: var(--player-color);
+  color: #20251c;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  width: 100%;
+  padding: 9px 10px 8px;
+  clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%);
+  z-index: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.badge-money {
+  font-family: "Space Grotesk", sans-serif;
+  background: #efedde;
+  color: #283024;
+  font-weight: 700;
+  font-size: 20px;
+  min-width: 100px;
+  padding: 4px 10px;
+  border-radius: 0 0 10px 10px;
+}
+.badge-meta {
+  font-size: 7px;
+  letter-spacing: 1px;
+  margin-top: 6px;
+  color: #eef3df;
+  text-shadow: 0 1px 5px #000;
+}
+.badge-turn {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  transform: translateX(-50%);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  color: #fff7d8;
+  background: #283320de;
+  border: 1px solid var(--player-color);
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+.player-badge.is-current .badge-token {
+  box-shadow:
+    0 0 0 5px #ffffff24,
+    0 0 25px var(--player-color);
+}
+.player-badge.is-current:before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 62px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 10px solid var(--player-color);
+}
+.player-badge.is-bankrupt {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.game-turn-dock {
+  position: absolute;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  padding: 16px 20px;
+  background: #20291ded;
+  border: 1px solid #b0c19755;
+  border-radius: 18px;
+  box-shadow: 0 12px 45px #12200d66;
+  backdrop-filter: blur(14px);
+  z-index: 3;
+}
+.dock-caption {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 13px;
+  text-align: left;
+}
+.dock-caption strong {
+  font-family: "Space Grotesk";
+  font-size: 15px;
+  font-weight: 500;
+  display: block;
+}
+.dock-caption span:not(.dock-token) {
+  display: block;
+  font-size: 10px;
+  color: #b3c0a3;
+  margin-top: 4px;
+}
+.dock-token {
+  font-size: 26px;
+}
+.dock-play {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.game-dice {
+  display: flex;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.game-die {
+  width: 46px;
+  height: 46px;
+  border-radius: 9px;
+  background: #f2edda;
+  box-shadow:
+    0 4px 0 #b7b19b,
+    0 7px 13px #0004;
+  color: #30372b;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  padding: 9px;
+  gap: 3px;
+}
+.game-die > i {
+  background: #30372b;
+  border-radius: 50%;
+}
+.game-die > svg {
+  grid-area: 1/1/4/4;
+  align-self: center;
+  justify-self: center;
+}
+.game-die.is-rolling {
+  animation: wiggle 0.2s infinite alternate;
+}
+.dock-actions {
+  flex: 1;
+}
+.game-action {
+  background: #edb477;
+  color: #28291b;
+  border: 1px solid #f3c99c;
+  border-radius: 30px;
+  padding: 14px 19px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  box-shadow:
+    0 4px 0 #af7843,
+    0 6px 16px #0002;
+  white-space: nowrap;
+}
+.game-action > svg:last-child {
+  margin-left: auto;
+}
+.game-action-secondary {
+  background: #eeeada;
+  color: #34412b;
+  border-color: #eeeada;
+  box-shadow:
+    0 4px 0 #b7b7a4,
+    0 6px 16px #0002;
+}
+.game-action:disabled {
+  cursor: not-allowed;
+}
+.bail-action {
+  border: 0;
+  background: none;
+  color: #e5c298;
+  font-size: 10px;
+  text-align: center;
+  width: 100%;
+  padding: 10px 0 0;
+}
+.movement-label {
+  text-align: center;
+  color: #eac69c;
+  font-family: "Space Grotesk";
+  font-size: 18px;
+}
+.movement-label > span {
+  font-family: "DM Sans";
+  font-size: 10px;
+  display: block;
+  color: #bac6aa;
+  margin-top: 4px;
+}
+.game-turn-dock.is-purchasing {
+  background: #20291de0;
+  width: fit-content;
+  max-width: calc(100% - 48px);
+  padding: 12px 24px;
+}
+.game-turn-dock.is-purchasing .dock-caption {
+  margin: 0;
+}
+.game-event {
+  position: absolute;
+  bottom: 195px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 440px;
+  padding: 9px 16px;
+  background: #1c281cd9;
+  border: 1px solid #b7c2a52e;
+  border-radius: 25px;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+.game-camera-hint {
+  position: absolute;
+  bottom: var(--hud-gap);
+  right: var(--hud-gap);
+  font-size: 8px;
+  color: #cfdbc4;
+  max-width: 150px;
+  line-height: 1.8;
+  text-align: right;
+  pointer-events: none;
+  text-shadow: 0 1px 5px #000;
+}
+.purchase-overlay {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100% - 48px));
+  z-index: 3;
+  filter: drop-shadow(0 14px 30px #10190f55);
+}
+.sale-ribbon {
+  width: 210px;
+  margin: 0 auto -9px;
+  background: var(--property-color);
+  color: #20251c;
+  padding: 10px;
+  text-align: center;
+  letter-spacing: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  border-radius: 5px;
+  box-shadow: 0 4px 10px #0002;
+}
+.purchase-deed {
+  background: #eeeada;
+  color: #2c3728;
+  border: 6px solid #faf6e8;
+  border-radius: 7px;
+  padding: 25px 20px 12px;
+}
+.deed-type {
+  display: block;
+  text-align: center;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #6c765f;
+  text-transform: uppercase;
+}
+.purchase-deed h2 {
+  background: var(--property-color);
+  border: 1px solid #28322344;
+  padding: 14px 10px;
+  text-align: center;
+  font-size: 25px;
+  margin: 12px 0 18px;
+}
+.deed-price {
+  text-align: center;
+  font-family: "Space Grotesk";
+  font-weight: 700;
+  font-size: 40px;
+}
+.deed-price > small {
+  display: block;
+  font-family: "DM Sans";
+  font-size: 10px;
+  font-weight: 400;
+  color: #6a755d;
+  margin-top: 3px;
+}
+.purchase-deed dl {
+  font-size: 11px;
+  margin: 16px 0 4px;
+}
+.purchase-deed dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid #8b94733b;
+}
+.purchase-deed dd {
+  font-weight: 700;
+  margin: 0;
+}
+.purchase-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 17px;
+}
+.purchase-actions .game-action {
+  flex: 1;
+}
+.purchase-warning {
+  background: #20291dea;
+  padding: 10px;
+  text-align: center;
+  font-size: 11px;
+  border-radius: 6px;
+  color: #f1c99d;
+}
+.game-popover {
+  position: absolute;
+  top: 85px;
+  left: var(--hud-gap);
+  width: 330px;
+  max-height: calc(100dvh - 270px);
+  overflow: auto;
+  background: #20291df5;
+  border: 1px solid #9aa98b77;
+  border-radius: 14px;
+  padding: 20px;
+  z-index: 5;
+  box-shadow: 0 12px 40px #0004;
+  backdrop-filter: blur(16px);
+}
+.popover-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.popover-heading h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.popover-heading .game-icon {
+  width: 30px;
+  height: 30px;
+  background: none;
+  box-shadow: none;
+  border: 0;
+}
+.game-popover ol {
+  font-size: 12px;
+  line-height: 1.8;
+  padding-left: 16px;
+  color: #c3cdb5;
+}
+.game-popover ol li {
+  padding: 9px 0;
+  border-bottom: 1px solid #b6c19c22;
+}
+.holdings-popover {
+  left: auto;
+  right: calc(var(--hud-gap) + 172px);
+  top: var(--hud-gap);
+}
+.game-popover p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #bfcbb1;
+}
+.holdings-balance {
+  font-family: "Space Grotesk";
+  font-size: 24px !important;
+}
+.holdings-balance span {
+  font-family: "DM Sans";
+  font-size: 10px;
+}
+.game-popover ul {
+  list-style: none;
+  padding: 0;
+}
+.game-popover ul button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: #ffffff09;
+  border: 0;
+  border-left: 5px solid;
+  padding: 14px 12px;
+  color: #e7eadb;
+  font-size: 12px;
+  text-align: left;
+  margin-bottom: 7px;
+}
+.fullscreen-message {
+  position: absolute;
+  top: 86px;
+  left: var(--hud-gap);
+  z-index: 6;
+  background: #20291df5;
+  padding: 12px 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 12px;
+  max-width: calc(100% - 32px);
+}
+.fullscreen-message button {
+  background: none;
+  border: 0;
+  color: inherit;
+}
+.app.is-playing .flat-board {
+  position: absolute;
+  inset: 90px 200px 220px 90px;
+  height: auto;
+}
+@media (max-width: 900px) and (orientation: landscape) {
+  .game-roster {
+    width: 115px;
+    top: 5%;
+    bottom: 8%;
+    gap: 5px;
+  }
+  .badge-token {
+    font-size: 24px;
+    height: 36px;
+    width: 45px;
+  }
+  .badge-name {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+  .badge-money {
+    font-size: 16px;
+    min-width: 80px;
+    padding: 3px 8px;
+  }
+  .badge-meta {
+    display: none;
+  }
+  .badge-turn {
+    font-size: 6px;
+    top: -9px;
+    padding: 2px 7px;
+  }
+  .player-badge.is-current:before {
+    top: 40px;
+  }
+  .game-tools {
+    gap: 7px;
+    flex-direction: column;
+  }
+  .game-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .game-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .game-turn-dock {
+    width: 340px;
+    bottom: 12px;
+    padding: 10px 15px;
+    border-radius: 13px;
+  }
+  .dock-caption {
+    margin-bottom: 8px;
+  }
+  .dock-caption strong {
+    font-size: 12px;
+  }
+  .dock-caption span:not(.dock-token) {
+    font-size: 8px;
+    margin-top: 2px;
+  }
+  .dock-token {
+    font-size: 20px;
+  }
+  .game-die {
+    width: 37px;
+    height: 37px;
+    padding: 7px;
+    gap: 2px;
+  }
+  .game-action {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+  .game-event {
+    bottom: 142px;
+    font-size: 9px;
+    max-width: 320px;
+    padding: 6px 12px;
+  }
+  .game-wordmark {
+    font-size: 17px;
+    bottom: 12px;
+  }
+  .game-wordmark small {
+    font-size: 5px;
+  }
+  .game-camera-hint {
+    display: none;
+  }
+  .purchase-overlay {
+    width: 290px;
+    top: 44%;
+  }
+  .purchase-deed {
+    padding: 15px 14px 8px;
+  }
+  .purchase-deed h2 {
+    font-size: 19px;
+    padding: 8px;
+    margin: 8px 0;
+  }
+  .deed-price {
+    font-size: 28px;
+  }
+  .purchase-deed dl {
+    margin: 8px 0 0;
+    font-size: 10px;
+  }
+  .purchase-deed dl > div {
+    padding: 5px 0;
+  }
+  .sale-ribbon {
+    font-size: 10px;
+    padding: 6px;
+    width: 170px;
+  }
+  .purchase-actions {
+    margin-top: 10px;
+    gap: 8px;
+  }
+  .game-turn-dock.is-purchasing {
+    padding: 8px 16px;
+  }
+  .game-popover {
+    top: 16px;
+    left: 70px;
+    max-height: calc(100dvh - 40px);
+    width: 300px;
+  }
+  .holdings-popover {
+    left: auto;
+    right: 150px;
+  }
+}
+@media (orientation: portrait) {
+  .game-screen {
+    --hud-gap: 16px;
+  }
+  .game-tools {
+    top: max(15px, env(safe-area-inset-top));
+    gap: 7px;
+  }
+  .game-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .game-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+  .game-wordmark {
+    top: 24px;
+    bottom: auto;
+    left: auto;
+    right: 16px;
+    font-size: 18px;
+  }
+  .game-wordmark small {
+    font-size: 5px;
+    letter-spacing: 1.5px;
+  }
+  .fullscreen-control {
+    display: none;
+  }
+  .game-roster {
+    top: 84px;
+    bottom: auto;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+  }
+  .player-badge {
+    width: calc((100% - 24px) / 4);
+    max-width: 115px;
+    padding: 0;
+  }
+  .badge-token {
+    width: 48px;
+    height: 42px;
+    font-size: 23px;
+    border-width: 2px;
+  }
+  .badge-name {
+    font-size: 10px;
+    padding: 7px 8px 5px;
+  }
+  .badge-money {
+    font-size: 15px;
+    min-width: 64px;
+    padding: 4px 6px;
+  }
+  .badge-meta {
+    font-size: 5px;
+    letter-spacing: 0.5px;
+  }
+  .badge-turn {
+    font-size: 5px;
+    top: -13px;
+    padding: 3px 6px;
+  }
+  .player-badge.is-current:before {
+    display: none;
+  }
+  .game-turn-dock {
+    width: calc(100% - 32px);
+    max-width: 400px;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    padding: 14px 18px;
+    border-radius: 16px;
+  }
+  .dock-caption strong {
+    font-size: 14px;
+  }
+  .game-action {
+    font-size: 12px;
+    min-height: 46px;
+    padding: 12px 15px;
+  }
+  .game-die {
+    width: 42px;
+    height: 42px;
+    padding: 8px;
+  }
+  .game-event {
+    bottom: 185px;
+    max-width: calc(100% - 40px);
+    width: max-content;
+    font-size: 10px;
+    padding: 8px 13px;
+  }
+  .game-camera-hint {
+    bottom: 164px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    max-width: none;
+    font-size: 7px;
+  }
+  .purchase-overlay {
+    width: calc(100% - 68px);
+    max-width: 340px;
+    top: calc(50% + 20px);
+  }
+  .purchase-deed h2 {
+    font-size: 23px;
+    padding: 12px 8px;
+    margin-bottom: 12px;
+  }
+  .deed-price {
+    font-size: 34px;
+  }
+  .purchase-deed {
+    padding: 23px 16px 12px;
+  }
+  .game-turn-dock.is-purchasing {
+    bottom: max(18px, env(safe-area-inset-bottom));
+    padding: 10px 16px;
+  }
+  .game-popover,
+  .holdings-popover {
+    top: 196px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-height: calc(100dvh - 370px);
+    padding: 16px;
+  }
+  .fullscreen-message {
+    top: 198px;
+    left: 16px;
+  }
+  .app.is-playing .flat-board {
+    inset: 210px 10px 220px;
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+@media (orientation: portrait) and (max-height: 720px) {
+  .game-roster {
+    top: 73px;
+  }
+  .badge-meta {
+    display: none;
+  }
+  .purchase-overlay {
+    top: calc(50% + 24px);
+    max-width: 285px;
+  }
+  .purchase-deed {
+    padding: 18px 12px 7px;
+  }
+  .purchase-deed h2 {
+    font-size: 19px;
+    margin: 8px 0;
+    padding: 8px;
+  }
+  .deed-price {
+    font-size: 26px;
+  }
+  .purchase-deed dl {
+    font-size: 10px;
+    margin: 10px 0 0;
+  }
+  .purchase-deed dl > div {
+    padding: 6px 0;
+  }
+  .purchase-actions {
+    margin-top: 12px;
+  }
+  .sale-ribbon {
+    padding: 7px;
+    font-size: 11px;
+  }
+}

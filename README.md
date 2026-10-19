@@ -23,6 +23,7 @@ npm run preview
 
 - Local pass-and-play for 2–4 players, names and unique selectable tokens.
 - 40 selectable 3D spaces, orbit/zoom controls, angled/top camera, animated token movement, responsive HUD, and a flat-board fallback when WebGL cannot initialize.
+- Gameplay fills the browser viewport. Player badges, dice, turn actions, purchase cards, camera controls, match options, history, and property inspection are overlaid on the game. Portrait phones move the player badges above the board; landscape uses a right-hand stack. Browser fullscreen is optional where supported.
 - Validated rolls, turns, purchases, property ownership, rent, color-set base-rent doubling, railroad/utility rent, taxes, cash cards, passing start, doubles and jail.
 - Simplified bankruptcy and last-player-standing victory; concede available from match options.
 - Versioned browser-local snapshot saved after every accepted action; resume from setup.
