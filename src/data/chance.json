@@ -1,0 +1,5 @@
+[
+  { "text": "Your pumpkin wins the harvest fair. Collect $50.", "amount": 50 },
+  { "text": "A broken broom needs repairs. Pay $50.", "amount": -50 },
+  { "text": "The full moon brings good fortune. Collect $100.", "amount": 100 }
+]

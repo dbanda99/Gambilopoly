@@ -1,0 +1,8 @@
+[
+  {
+    "text": "Your neighbors share their candy haul. Collect $100.",
+    "amount": 100
+  },
+  { "text": "Contribute to the haunted house fund. Pay $100.", "amount": -100 },
+  { "text": "You find a forgotten treasure. Collect $50.", "amount": 50 }
+]
