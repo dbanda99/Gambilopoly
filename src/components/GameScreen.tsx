@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -14,6 +14,16 @@ import GameBoard from "../three/GameBoard";
 import { BOARD, TOKENS } from "../engine/boardData";
 import type { Action, GameState } from "../engine/types";
 import "./game-screen.css";
+import "./cinematics.css";
+import OpeningSequence from "./OpeningSequence";
+import { useReducedMotion } from "../presentation/useReducedMotion";
+import {
+  PLAYER_SECONDS,
+  TOUR_SECONDS,
+  DICE_SECONDS,
+  type Cinematic,
+  type Movement,
+} from "../presentation/motion";
 
 function Die({
   value,
@@ -56,6 +66,7 @@ function Die({
 export default function GameScreen({
   state,
   moving,
+  motion,
   topDown,
   onView,
   onSelect,
@@ -65,6 +76,7 @@ export default function GameScreen({
 }: {
   state: GameState;
   moving: boolean;
+  motion: Movement | null;
   topDown: boolean;
   onView: () => void;
   onSelect: (id: number) => void;
@@ -81,6 +93,39 @@ export default function GameScreen({
   const inspectedPlayer = state.players.find((p) => p.id === inspected);
   const purchase =
     state.status === "playing" && state.phase === "purchase" && !moving;
+  const reducedMotion = useReducedMotion();
+  const opening = state.phase === "opening" && !!state.opening;
+  const activeIndex =
+    opening && state.opening?.stage === "introductions"
+      ? state.opening.spotlightIndex
+      : state.currentPlayerIndex;
+  const cinematic = useMemo<Cinematic | null>(
+    () =>
+      state.opening?.stage === "tour" ||
+      state.opening?.stage === "introductions"
+        ? {
+            stage: state.opening.stage,
+            index: state.opening.spotlightIndex,
+            startedAt: performance.now(),
+          }
+        : null,
+    [state.id, state.opening?.stage, state.opening?.spotlightIndex],
+  );
+  useEffect(() => {
+    if (!cinematic) return;
+    const duration = reducedMotion
+      ? 350
+      : (cinematic.stage === "tour" ? TOUR_SECONDS : PLAYER_SECONDS) * 1000;
+    const timer = setTimeout(() => onAction("advance-intro"), duration);
+    return () => clearTimeout(timer);
+  }, [cinematic, onAction, reducedMotion]);
+  const [diceRolling, setDiceRolling] = useState(false);
+  useEffect(() => {
+    if (!motion) return;
+    setDiceRolling(true);
+    const timer = setTimeout(() => setDiceRolling(false), DICE_SECONDS * 1000);
+    return () => clearTimeout(timer);
+  }, [motion]);
   useEffect(() => {
     const escape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -107,9 +152,19 @@ export default function GameScreen({
     }
   }
   return (
-    <main className="game-screen" aria-label="Gambilopoly game">
+    <main
+      className={`game-screen ${opening ? "is-opening" : ""}`}
+      aria-label="Gambilopoly game"
+    >
       <div className="game-world">
-        <GameBoard state={state} topDown={topDown} onSelect={onSelect} />
+        <GameBoard
+          state={state}
+          topDown={topDown}
+          onSelect={onSelect}
+          motion={motion}
+          cinematic={cinematic}
+          reducedMotion={reducedMotion}
+        />
       </div>
       <div className="game-vignette" />
       <div className="game-tools" aria-label="Game controls">
@@ -134,6 +189,7 @@ export default function GameScreen({
           aria-label={topDown ? "Angled view" : "Top view"}
           title={topDown ? "Angled view" : "Top view"}
           onClick={onView}
+          disabled={!!cinematic || moving}
         >
           <Layers />
         </button>
@@ -166,7 +222,7 @@ export default function GameScreen({
         {state.players.map((player, index) => (
           <button
             key={player.id}
-            className={`player-badge ${index === state.currentPlayerIndex && state.status === "playing" ? "is-current" : ""} ${player.bankrupt ? "is-bankrupt" : ""}`}
+            className={`player-badge ${index === activeIndex && state.status === "playing" ? "is-current" : ""} ${player.bankrupt ? "is-bankrupt" : ""}`}
             style={
               { "--player-color": TOKENS[player.token].color } as CSSProperties
             }
@@ -191,7 +247,15 @@ export default function GameScreen({
             </span>
             {index === state.currentPlayerIndex &&
               state.status === "playing" && (
-                <span className="badge-turn">YOUR TURN</span>
+                <span className="badge-turn">
+                  {opening
+                    ? state.opening?.stage === "ready"
+                      ? "GOES FIRST"
+                      : state.opening?.stage === "order"
+                        ? "ROLL FOR FIRST"
+                        : "MEET THE GHOULS"
+                    : "YOUR TURN"}
+                </span>
               )}
           </button>
         ))}
@@ -316,101 +380,111 @@ export default function GameScreen({
           )}
         </section>
       )}
-      <section
-        className={`game-turn-dock ${purchase ? "is-purchasing" : ""}`}
-        aria-label="Turn controls"
-        aria-live="polite"
-      >
-        {state.status === "finished" ? (
-          <>
-            <div className="dock-caption">
-              <Trophy size={18} />
-              <strong>{winner?.name} owns the night!</strong>
-            </div>
-            <button className="game-action" onClick={onOptions}>
-              Play again
-              <ArrowRight size={19} />
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="dock-caption">
-              <span className="dock-token">{TOKENS[current.token].icon}</span>
-              <div>
-                <strong>
-                  {current.name}
-                  {purchase
-                    ? " is considering a purchase"
-                    : moving
-                      ? " is on the move"
-                      : current.inJail
-                        ? " is in the Dungeon"
-                        : "’s turn"}
-                </strong>
-                <span>
-                  {moving
-                    ? "Following the moonlit path…"
-                    : purchase
-                      ? tile.name
-                      : tile.name}
-                </span>
+      {opening ? (
+        <OpeningSequence
+          state={state}
+          onAction={onAction}
+          reducedMotion={reducedMotion}
+        />
+      ) : (
+        <section
+          className={`game-turn-dock ${purchase ? "is-purchasing" : ""}`}
+          aria-label="Turn controls"
+          aria-live="polite"
+        >
+          {state.status === "finished" ? (
+            <>
+              <div className="dock-caption">
+                <Trophy size={18} />
+                <strong>{winner?.name} owns the night!</strong>
               </div>
-            </div>
-            {!purchase && (
-              <div className="dock-play">
-                <div className="game-dice" aria-label="Dice">
-                  <Die
-                    value={state.dice?.[0] ?? null}
-                    index={0}
-                    rolling={moving}
-                  />
-                  <Die
-                    value={state.dice?.[1] ?? null}
-                    index={1}
-                    rolling={moving}
-                  />
+              <button className="game-action" onClick={onOptions}>
+                Play again
+                <ArrowRight size={19} />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="dock-caption">
+                <span className="dock-token">{TOKENS[current.token].icon}</span>
+                <div>
+                  <strong>
+                    {current.name}
+                    {purchase
+                      ? " is considering a purchase"
+                      : moving
+                        ? " is on the move"
+                        : current.inJail
+                          ? " is in the Dungeon"
+                          : "’s turn"}
+                  </strong>
+                  <span>
+                    {moving
+                      ? "Following the moonlit path…"
+                      : purchase
+                        ? tile.name
+                        : tile.name}
+                  </span>
                 </div>
-                <div className="dock-actions">
-                  {moving ? (
-                    <div className="movement-label">
-                      {state.dice ? state.dice[0] + state.dice[1] : ""} spaces
-                      <span>Moving…</span>
-                    </div>
-                  ) : state.phase === "roll" ? (
-                    <>
+              </div>
+              {!purchase && (
+                <div className="dock-play">
+                  <div className="game-dice" aria-label="Dice">
+                    <Die
+                      value={state.dice?.[0] ?? null}
+                      index={0}
+                      rolling={diceRolling}
+                    />
+                    <Die
+                      value={state.dice?.[1] ?? null}
+                      index={1}
+                      rolling={diceRolling}
+                    />
+                  </div>
+                  <div className="dock-actions">
+                    {moving ? (
+                      <div className="movement-label">
+                        {state.dice ? state.dice[0] + state.dice[1] : ""} spaces
+                        <span>
+                          {diceRolling ? "Rolling…" : "Following your token…"}
+                        </span>
+                      </div>
+                    ) : state.phase === "roll" ? (
+                      <>
+                        <button
+                          className="game-action"
+                          onClick={() => onAction("roll")}
+                        >
+                          <Dices size={19} />
+                          Roll the dice
+                          <ArrowRight size={19} />
+                        </button>
+                        {current.inJail && (
+                          <button
+                            className="bail-action"
+                            onClick={() => onAction("bail")}
+                          >
+                            Pay $50 bail
+                          </button>
+                        )}
+                      </>
+                    ) : state.phase === "end" ? (
                       <button
                         className="game-action"
-                        onClick={() => onAction("roll")}
+                        onClick={() => onAction("end")}
                       >
-                        <Dices size={19} />
-                        Roll the dice
+                        {state.extraTurn ? "Doubles! Roll again" : "End turn"}
                         <ArrowRight size={19} />
                       </button>
-                      {current.inJail && (
-                        <button
-                          className="bail-action"
-                          onClick={() => onAction("bail")}
-                        >
-                          Pay $50 bail
-                        </button>
-                      )}
-                    </>
-                  ) : state.phase === "end" ? (
-                    <button
-                      className="game-action"
-                      onClick={() => onAction("end")}
-                    >
-                      {state.extraTurn ? "Doubles! Roll again" : "End turn"}
-                      <ArrowRight size={19} />
-                    </button>
-                  ) : null}
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
-      </section>
-      {!purchase && !moving && (
+              )}
+            </>
+          )}
+        </section>
+      )}
+      {!opening && !purchase && !moving && (
         <div className="game-event" role="status">
           {state.log[0]}
         </div>

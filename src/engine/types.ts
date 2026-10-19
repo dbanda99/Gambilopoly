@@ -33,7 +33,16 @@ export interface PropertyState {
   buildings: number;
   mortgaged: boolean;
 }
-export type GamePhase = "roll" | "purchase" | "end";
+export type GamePhase = "opening" | "roll" | "purchase" | "end";
+export interface OpeningState {
+  stage: "tour" | "introductions" | "order" | "ready";
+  spotlightIndex: number;
+  round: number;
+  candidateIds: string[];
+  rolls: Record<string, [number, number]>;
+  history: { round: number; playerId: string; dice: [number, number] }[];
+  winnerId: string | null;
+}
 export interface GameState {
   id: string;
   players: Player[];
@@ -52,7 +61,20 @@ export interface GameState {
     steps: number;
     revision: number;
   } | null;
+  opening?: OpeningState | null;
 }
 export type Action =
   | { type: "roll"; playerId: string }
-  | { type: "buy" | "pass" | "end" | "bail" | "resign"; playerId: string };
+  | {
+      type:
+        | "buy"
+        | "pass"
+        | "end"
+        | "bail"
+        | "resign"
+        | "advance-intro"
+        | "skip-intro"
+        | "opening-roll"
+        | "begin";
+      playerId: string;
+    };

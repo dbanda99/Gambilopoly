@@ -1,4 +1,10 @@
-import { Suspense, Component, type ReactNode } from "react";
+import {
+  Suspense,
+  Component,
+  useRef,
+  type ComponentRef,
+  type ReactNode,
+} from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { BOARD, TOKENS } from "../engine/boardData";
@@ -6,6 +12,7 @@ import type { GameState } from "../engine/types";
 import BoardTile from "./BoardTile";
 import PlayerToken from "./PlayerToken";
 import CameraRig from "./CameraRig";
+import type { Cinematic, Movement } from "../presentation/motion";
 class BoardBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { failed: boolean }
@@ -40,11 +47,18 @@ export default function GameBoard({
   state,
   onSelect,
   topDown,
+  motion,
+  cinematic,
+  reducedMotion,
 }: {
   state: GameState;
   onSelect: (id: number) => void;
   topDown: boolean;
+  motion: Movement | null;
+  cinematic: Cinematic | null;
+  reducedMotion: boolean;
 }) {
+  const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const fallback = (
     <div className="flat-board">
       {BOARD.map((s) => (
@@ -73,7 +87,14 @@ export default function GameBoard({
           fallback={fallback}
         >
           <color attach="background" args={["#566044"]} />
-          <CameraRig topDown={topDown} />
+          <CameraRig
+            topDown={topDown}
+            motion={motion}
+            cinematic={cinematic}
+            state={state}
+            reducedMotion={reducedMotion}
+            controls={controls}
+          />
           <ambientLight intensity={1.7} />
           <mesh
             position={[0, -0.42, 0]}
@@ -131,24 +152,33 @@ export default function GameBoard({
               </group>
             )),
           )}
-          {state.players
-            .filter((p) => !p.bankrupt)
-            .map((p, i) => (
+          {state.players.map((p, i) =>
+            !p.bankrupt || motion?.playerId === p.id ? (
               <PlayerToken
                 key={p.id}
                 player={p}
                 index={i}
                 movement={state.movement}
+                motion={motion}
+                reducedMotion={reducedMotion}
+                spotlight={
+                  cinematic?.stage === "introductions" && cinematic.index === i
+                }
+                introducing={cinematic?.stage === "introductions"}
               />
-            ))}
+            ) : null,
+          )}
           <OrbitControls
+            ref={controls}
             makeDefault
             enablePan={false}
-            minDistance={12}
+            minDistance={2}
             maxDistance={80}
             minPolarAngle={0.05}
             maxPolarAngle={Math.PI / 2.4}
             target={[0, 0, 0]}
+            enableDamping
+            dampingFactor={0.08}
           />
         </Canvas>
       </Suspense>

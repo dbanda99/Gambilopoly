@@ -3,42 +3,52 @@ import { useFrame } from "@react-three/fiber";
 import { Group } from "three";
 import { boardPosition, TOKENS } from "../engine/boardData";
 import type { GameState, Player } from "../engine/types";
+import { sampleMovement, type Movement } from "../presentation/motion";
 export default function PlayerToken({
   player,
   index,
   movement,
+  motion,
+  spotlight = false,
+  introducing = false,
+  reducedMotion = false,
 }: {
   player: Player;
   index: number;
   movement: GameState["movement"];
+  motion: Movement | null;
+  spotlight?: boolean;
+  introducing?: boolean;
+  reducedMotion?: boolean;
 }) {
   const ref = useRef<Group>(null);
-  const progress = useRef({ revision: -1, step: 0 });
   useFrame((_, delta) => {
     if (!ref.current) return;
-    let position = player.position;
-    if (movement?.playerId === player.id) {
-      if (progress.current.revision !== movement.revision)
-        progress.current = { revision: movement.revision, step: 0 };
-      progress.current.step = Math.min(
-        movement.steps,
-        progress.current.step + delta * 5,
-      );
-      position = movement.from + progress.current.step;
-    }
-    const n = Math.floor(position),
-      f = position - n,
-      [x, z] = boardPosition(n),
-      [nx, nz] = boardPosition(n + 1);
+    const frame =
+      motion?.playerId === player.id
+        ? sampleMovement(motion, performance.now(), reducedMotion)
+        : null;
+    const [x, z] = boardPosition(player.position);
     ref.current.position.set(
-      x + (nx - x) * f + (index % 2 ? 0.17 : -0.17),
-      0.33 + Math.sin(f * Math.PI) * 0.18,
-      z + (nz - z) * f + (index < 2 ? 0.16 : -0.16),
+      (frame && !frame.done ? frame.x : x) + (index % 2 ? 0.17 : -0.17),
+      0.33 + (frame?.hop ?? 0),
+      (frame && !frame.done ? frame.z : z) + (index < 2 ? 0.16 : -0.16),
     );
+    const scale =
+      ref.current.scale.x +
+      ((spotlight ? 1.3 : introducing ? 0.55 : 1) - ref.current.scale.x) *
+        (1 - Math.exp(-delta * 7));
+    ref.current.scale.setScalar(scale);
   });
   const color = TOKENS[player.token].color;
   return (
     <group ref={ref}>
+      {spotlight && (
+        <mesh position={[0, -0.18, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.24, 0.31, 32]} />
+          <meshBasicMaterial color={color} transparent opacity={0.65} />
+        </mesh>
+      )}
       <mesh position={[0, -0.13, 0]}>
         <cylinderGeometry args={[0.19, 0.23, 0.09, 20]} />
         <meshStandardMaterial color={color} />

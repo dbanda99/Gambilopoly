@@ -3,6 +3,7 @@ import { rentFor } from "./rules";
 import chance from "../data/chance.json";
 import community from "../data/communityChest.json";
 import type { Action, GameState, Player } from "./types";
+import { applyOpeningAction } from "./opening";
 export function secureRandom(): number {
   return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
 }
@@ -14,6 +15,14 @@ export function applyAction(
   if (current.status !== "playing") throw new Error("This match has finished.");
   if (current.players[current.currentPlayerIndex].id !== action.playerId)
     throw new Error("It is another player’s turn.");
+  if (current.phase === "opening")
+    return applyOpeningAction(current, action, random);
+  if (
+    ["advance-intro", "skip-intro", "opening-roll", "begin"].includes(
+      action.type,
+    )
+  )
+    throw new Error("The opening sequence has already finished.");
   const s: GameState = structuredClone(current),
     p = s.players[s.currentPlayerIndex];
   const log = (message: string) => {

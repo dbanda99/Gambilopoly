@@ -1,6 +1,9 @@
 import { BOARD } from "./boardData";
 import type { GameState, Token } from "./types";
-export function createGame(names: { name: string; token: Token }[]): GameState {
+export function createGame(
+  names: { name: string; token: Token }[],
+  options: { skipOpening?: boolean } = {},
+): GameState {
   if (
     names.length < 2 ||
     names.length > 4 ||
@@ -24,7 +27,18 @@ export function createGame(names: { name: string; token: Token }[]): GameState {
       bankrupt: false,
     })),
     currentPlayerIndex: 0,
-    phase: "roll",
+    phase: options.skipOpening ? "roll" : "opening",
+    opening: options.skipOpening
+      ? null
+      : {
+          stage: "tour",
+          spotlightIndex: 0,
+          round: 1,
+          candidateIds: names.map((_, i) => `player-${i}`),
+          rolls: {},
+          history: [],
+          winnerId: null,
+        },
     properties: Object.fromEntries(
       BOARD.filter((s) => s.price).map((s) => [
         s.id,

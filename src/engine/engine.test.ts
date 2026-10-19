@@ -5,10 +5,13 @@ import { BOARD, boardPosition } from "./boardData";
 import { rentFor } from "./rules";
 import type { Action, GameState } from "./types";
 const game = () =>
-  createGame([
-    { name: "Pumpkin", token: "pumpkin" },
-    { name: "Ghost", token: "ghost" },
-  ]);
+  createGame(
+    [
+      { name: "Pumpkin", token: "pumpkin" },
+      { name: "Ghost", token: "ghost" },
+    ],
+    { skipOpening: true },
+  );
 const sequence = (...values: number[]) => {
   let i = 0;
   return () => values[i++ % values.length];

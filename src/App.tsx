@@ -1,35 +1,47 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, BookOpen, Moon, X } from "lucide-react";
 import Lobby from "./components/Lobby";
 import PropertyCard from "./components/PropertyCard";
 import GameScreen from "./components/GameScreen";
 import { useGame } from "./store";
+import type { Action } from "./engine/types";
+import { movementDuration, type Movement } from "./presentation/motion";
 export default function App() {
   const { state, dispatch, error, clearError } = useGame();
   const [rules, setRules] = useState(false),
     [selected, setSelected] = useState<number | null>(null),
-    [topDown, setTopDown] = useState(true),
-    [moving, setMoving] = useState(false),
+    [topDown, setTopDown] = useState(false),
     [leave, setLeave] = useState(false);
+  const motion = useMemo<Movement | null>(
+    () =>
+      state?.movement
+        ? { ...state.movement, startedAt: performance.now() }
+        : null,
+    [state?.id, state?.movement?.revision],
+  );
+  const [completedMotion, setCompletedMotion] = useState<Movement | null>(null);
+  const moving = !!motion && completedMotion !== motion;
   useEffect(() => {
-    if (!state?.movement) {
-      setMoving(false);
-      return;
-    }
-    setMoving(true);
-    const t = setTimeout(
-      () => setMoving(false),
-      state.movement.steps * 200 + 180,
+    if (!motion) return;
+    const timer = setTimeout(
+      () => setCompletedMotion(motion),
+      Math.max(
+        0,
+        movementDuration(motion.steps) * 1000 -
+          (performance.now() - motion.startedAt),
+      ),
     );
-    return () => clearTimeout(t);
-  }, [state?.movement?.revision]);
+    return () => clearTimeout(timer);
+  }, [motion]);
   useEffect(() => {
     document.body.classList.toggle("in-game", !!state);
     return () => document.body.classList.remove("in-game");
   }, [!!state]);
   const player = state?.players[state.currentPlayerIndex];
-  const action = (type: "roll" | "buy" | "pass" | "end" | "bail" | "resign") =>
-    dispatch({ type, playerId: player!.id });
+  const action = useCallback(
+    (type: Action["type"]) => dispatch({ type, playerId: player!.id }),
+    [dispatch, player?.id],
+  );
   return (
     <div className={`app ${state ? "is-playing" : ""}`}>
       <header className="header">
@@ -63,6 +75,7 @@ export default function App() {
         <GameScreen
           state={state}
           moving={moving}
+          motion={motion}
           topDown={topDown}
           onView={() => setTopDown(!topDown)}
           onSelect={setSelected}
@@ -171,7 +184,7 @@ export default function App() {
             >
               Set up a new game <ArrowRight size={16} />
             </button>
-            {state?.status === "playing" && (
+            {state?.status === "playing" && state.phase !== "opening" && (
               <button
                 className="resume"
                 onClick={() => {

@@ -33,6 +33,19 @@ try {
     .getByRole("button", { name: "Player 1: Witch", exact: true })
     .click();
   await page.getByRole("button", { name: "Enter the neighborhood" }).click();
+  await page.getByRole("button", { name: "Skip camera tour" }).click();
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const start = page.getByRole("button", {
+      name: "Start playing",
+      exact: true,
+    });
+    if (await start.count()) {
+      await start.click();
+      break;
+    }
+    await page.getByRole("button", { name: /roll for first$/ }).click();
+    await page.waitForTimeout(850);
+  }
   await page.getByRole("button", { name: "Roll the dice" }).waitFor();
   await page.waitForTimeout(1800);
   const fullViewport = await page.locator(".game-screen").boundingBox();

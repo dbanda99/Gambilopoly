@@ -1,0 +1,291 @@
+.intro-caption {
+  position: absolute;
+  bottom: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: min(580px, calc(100% - 40px));
+  padding: 24px 30px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #182417ed, #23311bdd);
+  border: 1px solid #e1e6c23b;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 80px #101b1155;
+  animation: cinema-appear 0.65s both;
+  z-index: 3;
+}
+.intro-caption .eyebrow {
+  justify-content: center;
+  color: #d6c4a0;
+  font-size: 9px;
+}
+.intro-caption h1 {
+  font-family: "Space Grotesk";
+  font-size: 36px;
+  letter-spacing: -1.5px;
+  font-weight: 500;
+  margin: 15px 0 10px;
+}
+.intro-caption p {
+  font-size: 12px;
+  color: #b7c4a7;
+  line-height: 1.8;
+}
+.intro-skip {
+  border: 0;
+  border-top: 1px solid #c4d0ae26;
+  padding: 14px 8px 0;
+  margin-top: 8px;
+  background: none;
+  color: #e5d3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  min-height: 44px;
+}
+.opening-order {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  width: min(410px, calc(100% - 40px));
+  padding: 27px;
+  background: #20291df2;
+  border: 1px solid #c1cca96b;
+  border-radius: 20px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 80px #101b1177;
+  z-index: 3;
+  animation: cinema-appear 0.6s both;
+}
+.opening-order h2 {
+  font-family: "Space Grotesk";
+  font-size: 26px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0 10px;
+}
+.opening-order > p {
+  font-size: 11px;
+  color: #b8c4a9;
+  line-height: 1.7;
+  margin: 0 0 20px;
+}
+.opening-results {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 23px;
+}
+.opening-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  background: #ffffff07;
+  border: 1px solid #c1cca922;
+  border-radius: 8px;
+  transition:
+    border-color 0.4s,
+    background 0.4s;
+}
+.opening-result.is-next {
+  background: #efb16f12;
+  border-color: #efb16f66;
+}
+.opening-result > span:first-child {
+  font-size: 23px;
+}
+.opening-result > strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.opening-dice {
+  margin-left: auto;
+  font-family: "Space Grotesk";
+  font-size: 13px;
+  white-space: nowrap;
+}
+.opening-result > b {
+  min-width: 27px;
+  text-align: center;
+  font-family: "Space Grotesk";
+  font-size: 18px;
+  color: #efbf88;
+}
+.opening-dice.is-rolling {
+  animation: wiggle 0.13s infinite alternate;
+}
+.purchase-overlay {
+  animation: purchase-appear 0.45s both;
+}
+.game-event {
+  animation: event-appear 0.4s both;
+}
+.player-badge.is-current .badge-token {
+  transition: box-shadow 0.5s;
+}
+.game-tools button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@keyframes cinema-appear {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+@keyframes purchase-appear {
+  from {
+    opacity: 0;
+    margin-top: 14px;
+  }
+  to {
+    opacity: 1;
+    margin-top: 0;
+  }
+}
+@keyframes event-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (orientation: portrait) {
+  .intro-caption {
+    bottom: 10%;
+    padding: 19px 22px;
+  }
+  .intro-caption h1 {
+    font-size: 28px;
+  }
+  .intro-caption p {
+    font-size: 11px;
+  }
+  .opening-order {
+    top: calc(50% + 40px);
+    padding: 22px;
+    width: calc(100% - 48px);
+  }
+  .opening-order h2 {
+    font-size: 23px;
+  }
+  .opening-order > p {
+    font-size: 10px;
+  }
+  .opening-result {
+    padding: 9px 8px;
+    gap: 8px;
+  }
+  .opening-result > strong {
+    font-size: 11px;
+  }
+  .opening-dice {
+    font-size: 12px;
+  }
+  .opening-results {
+    margin-bottom: 20px;
+  }
+  .is-opening .game-camera-hint {
+    bottom: 20px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .intro-caption {
+    bottom: 7%;
+    width: 420px;
+    padding: 15px 22px;
+  }
+  .intro-caption h1 {
+    font-size: 26px;
+    margin: 10px 0 6px;
+  }
+  .intro-caption p {
+    font-size: 10px;
+    margin: 6px 0;
+  }
+  .intro-skip {
+    padding-top: 7px;
+    margin-top: 2px;
+    min-height: 32px;
+  }
+  .opening-order {
+    top: 50%;
+    width: 390px;
+    padding: 17px 22px;
+  }
+  .opening-order h2 {
+    font-size: 21px;
+    margin: 8px 0;
+  }
+  .opening-order > p {
+    margin-bottom: 12px;
+    font-size: 9px;
+  }
+  .opening-results {
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .opening-result {
+    padding: 6px 9px;
+  }
+  .opening-result > span:first-child {
+    font-size: 18px;
+  }
+  .opening-result > strong {
+    font-size: 10px;
+  }
+  .opening-result > b {
+    font-size: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-caption,
+  .opening-order,
+  .purchase-overlay,
+  .game-event,
+  .opening-dice.is-rolling {
+    animation: none;
+  }
+}
+@media (orientation: portrait) and (max-height: 720px) {
+  .opening-order {
+    padding: 16px;
+  }
+  .opening-order h2 {
+    font-size: 20px;
+    margin: 10px 0;
+  }
+  .opening-order > p {
+    font-size: 9px;
+    margin-bottom: 12px;
+  }
+  .opening-results {
+    gap: 5px;
+    margin-bottom: 14px;
+  }
+  .opening-result {
+    padding: 7px 8px;
+  }
+  .opening-result > span:first-child {
+    font-size: 20px;
+  }
+  .opening-result > strong {
+    font-size: 10px;
+  }
+  .opening-result > b {
+    font-size: 16px;
+  }
+}
