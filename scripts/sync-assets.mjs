@@ -8,6 +8,7 @@ import {
 import path from "node:path";
 import sharp from "sharp";
 await import("./prepare-models.mjs");
+await import("./prepare-tabletop.mjs");
 const output = path.join(process.cwd(), "public", "assets");
 mkdirSync(output, { recursive: true });
 if (!existsSync("2d-textures"))
@@ -18,6 +19,7 @@ await sharp("2d-textures/map-center/cementary-background.png")
   .webp({ quality: 90 })
   .toFile(path.join(output, "board", "map-center", "cemetery-background.webp"));
 cpSync("assets/players", path.join(output, "players"), { recursive: true });
+cpSync("assets/tabletop", path.join(output, "tabletop"), { recursive: true });
 const catalog = JSON.parse(readFileSync("src/data/playerAssets.json", "utf8"));
 const models = Object.fromEntries(
   Object.entries(catalog).map(([token, entry]) => [

@@ -13,6 +13,9 @@ import BoardTile from "./BoardTile";
 import PlayerToken from "./PlayerToken";
 import CameraRig from "./CameraRig";
 import BoardCenter from "./BoardCenter";
+import DiceScene from "./DiceScene";
+import PropertyBuildings from "./PropertyBuildings";
+import type { RollPresentation } from "../presentation/diceRoll";
 import type { Cinematic, Movement } from "../presentation/motion";
 class BoardBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -33,6 +36,8 @@ export default function GameBoard({
   motion,
   cinematic,
   reducedMotion,
+  rollEvent,
+  diceActive,
 }: {
   state: GameState;
   onSelect: (id: number) => void;
@@ -40,6 +45,8 @@ export default function GameBoard({
   motion: Movement | null;
   cinematic: Cinematic | null;
   reducedMotion: boolean;
+  rollEvent: RollPresentation | null;
+  diceActive: boolean;
 }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const fallback = (
@@ -77,6 +84,7 @@ export default function GameBoard({
             state={state}
             reducedMotion={reducedMotion}
             controls={controls}
+            diceActive={diceActive}
           />
           <ambientLight intensity={1.7} />
           <mesh
@@ -98,6 +106,7 @@ export default function GameBoard({
             <meshStandardMaterial color="#25232b" roughness={0.95} />
           </mesh>
           <BoardCenter />
+          <DiceScene roll={rollEvent} reducedMotion={reducedMotion} />
           {BOARD.map((space) => {
             const owner = state.players.find(
               (p) => p.id === state.properties[space.id]?.ownerId,
@@ -111,6 +120,17 @@ export default function GameBoard({
               />
             );
           })}
+          {BOARD.filter(
+            (tile) =>
+              tile.type === "property" &&
+              state.properties[tile.id]?.buildings > 0,
+          ).map((tile) => (
+            <PropertyBuildings
+              key={tile.id}
+              id={tile.id}
+              count={state.properties[tile.id].buildings}
+            />
+          ))}
           {state.players.map((p, i) =>
             !p.bankrupt || motion?.playerId === p.id ? (
               <PlayerToken

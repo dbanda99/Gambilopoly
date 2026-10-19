@@ -1,4 +1,5 @@
 import data from "../data/properties.json";
+import buildingData from "../data/buildings.json";
 import type { BoardSpace } from "./types";
 const propertyPositions = [
   1, 3, 6, 8, 9, 11, 13, 14, 16, 18, 19, 21, 23, 24, 26, 27, 29, 31, 32, 34, 37,
@@ -33,7 +34,9 @@ export const BOARD: BoardSpace[] = Array.from({ length: 40 }, (_, id) => {
       name: String(name),
       type: "property",
       price: Number(price),
-      rent: [Number(rent)],
+      rent: (buildingData.rents as Record<string, number[]>)[String(id)] ?? [
+        Number(rent),
+      ],
       group: String(group),
       color: String(color),
     };

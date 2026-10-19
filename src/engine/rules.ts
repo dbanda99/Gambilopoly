@@ -16,6 +16,7 @@ export function rentFor(state: GameState, id: number): number {
       (owned.length === 2 ? 10 : 4)
     );
   const group = BOARD.filter((s) => s.group === space.group);
+  if (property.buildings > 0) return space.rent?.[property.buildings] ?? 0;
   return (
     (space.rent?.[0] ?? 0) *
     (group.every((s) => state.properties[s.id].ownerId === property.ownerId)

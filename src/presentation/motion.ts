@@ -3,7 +3,8 @@ import type { GameState } from "../engine/types";
 export type Movement = NonNullable<GameState["movement"]> & {
   startedAt: number;
 };
-export const DICE_SECONDS = 0.75;
+import { DICE_SECONDS } from "./diceRoll";
+export { DICE_SECONDS } from "./diceRoll";
 export const APPROACH_SECONDS = 0.65;
 export const STEP_SECONDS = 0.32;
 export const LANDING_SECONDS = 0.8;

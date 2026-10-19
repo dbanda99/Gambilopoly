@@ -24,7 +24,8 @@ The first milestone is local play. The overall prototype is complete only after 
 - [x] Base-rent sets, railroad/utility scaling, simplified bankruptcy and winner.
 - [ ] Auctions when a property is declined; validated bidding and closing.
 - [ ] Ordered/shuffled card decks, movement effects and get-out-of-jail cards.
-- [ ] Even building rules, house/hotel bank supply, sellback, mortgage/unmortgage.
+- [x] Even building rules, house/inn bank supply, building rent and sellback.
+- [ ] Mortgage/unmortgage.
 - [ ] Two-party trade proposals and acceptance validation.
 - [ ] Debt resolution before bankruptcy, creditor/bank procedures and auctions.
 - Acceptance: scenario tests cover every rule and a full match can finish using traditional rules.

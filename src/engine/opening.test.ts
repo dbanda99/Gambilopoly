@@ -9,7 +9,11 @@ const game = () =>
     { name: "B", token: "ghost" },
     { name: "C", token: "witch" },
   ]);
-const act = (s: GameState, type: Action["type"], roll = 0) =>
+const act = (
+  s: GameState,
+  type: Exclude<Action["type"], "build" | "sell-building">,
+  roll = 0,
+) =>
   applyAction(
     s,
     { type, playerId: s.players[s.currentPlayerIndex].id },
@@ -53,6 +57,7 @@ describe("opening sequence", () => {
     expect(s.dice).toBeNull();
     s = act(s, "roll", 0.1);
     if (s.phase === "purchase") s = act(s, "pass");
+    if (s.phase === "card") s = act(s, "ack-card");
     s.extraTurn = false;
     expect(act(s, "end").currentPlayerIndex).toBe(2);
   });

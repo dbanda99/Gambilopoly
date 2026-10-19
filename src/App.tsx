@@ -6,19 +6,37 @@ import GameScreen from "./components/GameScreen";
 import { useGame } from "./store";
 import type { Action } from "./engine/types";
 import { movementDuration, type Movement } from "./presentation/motion";
+import { DICE_SECONDS, type RollPresentation } from "./presentation/diceRoll";
 export default function App() {
-  const { state, dispatch, error, clearError } = useGame();
+  const { state, dispatch, error, clearError, rollEvent } = useGame();
   const [rules, setRules] = useState(false),
     [selected, setSelected] = useState<number | null>(null),
     [topDown, setTopDown] = useState(false),
     [leave, setLeave] = useState(false);
   const motion = useMemo<Movement | null>(
     () =>
-      state?.movement
-        ? { ...state.movement, startedAt: performance.now() }
+      state?.movement &&
+      rollEvent?.purpose === "turn" &&
+      state.movement.revision === rollEvent.revision
+        ? { ...state.movement, startedAt: rollEvent.startedAt }
         : null,
-    [state?.id, state?.movement?.revision],
+    [state?.id, state?.movement?.revision, rollEvent],
   );
+  const [completedRoll, setCompletedRoll] = useState<RollPresentation | null>(
+    null,
+  );
+  const diceActive = !!rollEvent && completedRoll !== rollEvent;
+  useEffect(() => {
+    if (!rollEvent) return;
+    const timer = setTimeout(
+      () => setCompletedRoll(rollEvent),
+      Math.max(
+        0,
+        DICE_SECONDS * 1000 - (performance.now() - rollEvent.startedAt),
+      ),
+    );
+    return () => clearTimeout(timer);
+  }, [rollEvent]);
   const [completedMotion, setCompletedMotion] = useState<Movement | null>(null);
   const moving = !!motion && completedMotion !== motion;
   useEffect(() => {
@@ -39,7 +57,8 @@ export default function App() {
   }, [!!state]);
   const player = state?.players[state.currentPlayerIndex];
   const action = useCallback(
-    (type: Action["type"]) => dispatch({ type, playerId: player!.id }),
+    (type: Exclude<Action["type"], "build" | "sell-building">) =>
+      dispatch({ type, playerId: player!.id }),
     [dispatch, player?.id],
   );
   return (
@@ -74,7 +93,9 @@ export default function App() {
       ) : (
         <GameScreen
           state={state}
-          moving={moving}
+          moving={moving || diceActive}
+          diceActive={diceActive}
+          rollEvent={rollEvent}
           motion={motion}
           topDown={topDown}
           onView={() => setTopDown(!topDown)}
@@ -90,11 +111,12 @@ export default function App() {
           Made for your favorite ghouls. <span className="footer-star">✦</span>
         </span>
       </footer>
-      {selected !== null && state && (
+      {selected !== null && state && state.phase !== "card" && (
         <PropertyCard
           id={selected}
           state={state}
           onClose={() => setSelected(null)}
+          interactionDisabled={moving || diceActive}
         />
       )}
       {error && (
@@ -145,8 +167,8 @@ export default function App() {
               <strong>First playable · local alpha</strong>
               <p>
                 Purchase passes skip auctions. Cards currently apply simple cash
-                effects. Buildings, mortgages, trades, debt negotiation and
-                online room codes arrive in later phases.
+                effects. Mortgages, trades, debt negotiation and online room
+                codes arrive in later phases.
               </p>
             </div>
             <button className="primary" onClick={() => setRules(false)}>

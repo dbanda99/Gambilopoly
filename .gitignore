@@ -8,3 +8,5 @@ playwright-report/
 /public/assets/
 /src/generated/
 /3d-models/figurines/*.glb
+/3d-models/house/*.glb
+/3d-models/hotel/*.glb

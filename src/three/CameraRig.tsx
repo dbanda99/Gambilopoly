@@ -20,6 +20,7 @@ export default function CameraRig({
   state,
   reducedMotion,
   controls,
+  diceActive,
 }: {
   topDown: boolean;
   motion: Movement | null;
@@ -27,6 +28,7 @@ export default function CameraRig({
   state: GameState;
   reducedMotion: boolean;
   controls: RefObject<ComponentRef<typeof OrbitControls> | null>;
+  diceActive: boolean;
 }) {
   const { camera, size } = useThree();
   const initialized = useRef(false),
@@ -40,6 +42,7 @@ export default function CameraRig({
   }, [
     topDown,
     motion?.revision,
+    diceActive,
     cinematic?.stage,
     cinematic?.index,
     state.opening?.stage,
@@ -82,7 +85,8 @@ export default function CameraRig({
       nextEye = direction.multiplyScalar(fit);
     const now = performance.now();
     const movement = motion ? sampleMovement(motion, now, reducedMotion) : null;
-    const automatic = !!cinematic || (!!movement && !movement.done);
+    const automatic =
+      !!cinematic || diceActive || (!!movement && !movement.done);
     if (cinematic && !reducedMotion) {
       const elapsed = (now - cinematic.startedAt) / 1000;
       if (cinematic.stage === "tour") {

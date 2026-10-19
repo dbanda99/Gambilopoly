@@ -35,11 +35,14 @@ try {
   await page.getByRole("button", { name: "Enter the neighborhood" }).click();
   await page.getByRole("button", { name: "Skip camera tour" }).click();
   for (let attempt = 0; attempt < 40; attempt++) {
-    const phase=await page.evaluate(()=>JSON.parse(localStorage.getItem('gambilopoly-local-v1')).state.phase);
-    if(phase!=='opening')break;
+    const phase = await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("gambilopoly-local-v1")).state.phase,
+    );
+    if (phase !== "opening") break;
     // Wait for the same button to finish its reveal animation; its label can
     // change to Start playing while a slow WebGL frame is being rendered.
-    await page.locator('.opening-order > .game-action').click();
+    await page.locator(".opening-order > .game-action").click();
   }
   await page.getByRole("button", { name: "Roll the dice" }).waitFor();
   await page.waitForTimeout(1800);
@@ -59,10 +62,12 @@ try {
   });
   await page.getByRole("button", { name: "Roll the dice" }).click();
   const decision = page.getByRole("button", {
-    name: /^Pass for now$|^End turn$|^Doubles! Roll again$/,
+    name: /^Pass for now$|^End turn$|^Doubles! Roll again$|^Continue$/,
   });
   await decision.waitFor({ state: "visible" });
   await page.waitForTimeout(3000);
+  if (await page.getByRole("button", { name: "Continue", exact: true }).count())
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
   if (
     await page
       .getByRole("button", { name: "Pass for now", exact: true })

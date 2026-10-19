@@ -8,14 +8,16 @@ export default function OpeningSequence({
   state,
   onAction,
   reducedMotion,
+  diceActive,
 }: {
   state: GameState;
-  onAction: (type: Action["type"]) => void;
+  onAction: (type: Exclude<Action["type"], "build" | "sell-building">) => void;
   reducedMotion: boolean;
+  diceActive: boolean;
 }) {
   const o = state.opening!;
   const [revealed, setRevealed] = useState(o.history.length);
-  const rolling = revealed !== o.history.length;
+  const rolling = diceActive || revealed !== o.history.length;
   useEffect(() => {
     if (!rolling) return;
     const timer = setTimeout(

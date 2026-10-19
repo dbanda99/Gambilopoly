@@ -12,7 +12,7 @@ import { artworkFor } from "./boardArtwork";
 it("maps every space to a supplied board template", () => {
   for (const tile of BOARD) {
     expect(
-      existsSync(artworkFor(tile).replace('/assets/board/', '2d-textures/')),
+      existsSync(artworkFor(tile).replace("/assets/board/", "2d-textures/")),
       `${tile.name}: ${artworkFor(tile)}`,
     ).toBe(true);
   }

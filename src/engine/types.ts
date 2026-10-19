@@ -34,7 +34,15 @@ export interface PropertyState {
   buildings: number;
   mortgaged: boolean;
 }
-export type GamePhase = "opening" | "roll" | "purchase" | "end";
+export type GamePhase = "opening" | "roll" | "purchase" | "card" | "end";
+export interface PendingCard {
+  deck: "chance" | "community";
+  index: number;
+  text: string;
+  amount: number;
+  playerId: string;
+  revision: number;
+}
 export interface OpeningState {
   stage: "tour" | "introductions" | "order" | "ready";
   spotlightIndex: number;
@@ -63,8 +71,10 @@ export interface GameState {
     revision: number;
   } | null;
   opening?: OpeningState | null;
+  pendingCard?: PendingCard | null;
 }
 export type Action =
+  | { type: "build" | "sell-building"; playerId: string; spaceId: number }
   | { type: "roll"; playerId: string }
   | {
       type:
@@ -76,6 +86,7 @@ export type Action =
         | "advance-intro"
         | "skip-intro"
         | "opening-roll"
-        | "begin";
+        | "begin"
+        | "ack-card";
       playerId: string;
     };

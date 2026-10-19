@@ -1,0 +1,165 @@
+.card-reveal-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: #0b0811a6;
+  backdrop-filter: blur(5px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.card-reveal-stage {
+  width: min(620px, calc(100vw - 40px));
+  perspective: 1400px;
+}
+.flipping-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1050/750;
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.22, 0.7, 0.25, 1);
+  box-shadow: 0 24px 75px #0008;
+}
+.flipping-card.is-face-up {
+  transform: rotateY(180deg);
+}
+.card-side {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background-size: 100% 100%;
+  background-position: center;
+  border-radius: 5px;
+}
+.card-front {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10%;
+  color: #f7e5c2;
+  text-align: center;
+  background-color: #000;
+}
+.card-front .eyebrow {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #d5a85b;
+}
+.card-front h2 {
+  font-size: clamp(20px, 3vw, 36px);
+  margin: 15px 0 20px;
+}
+.card-front p {
+  font-family: "Space Grotesk";
+  font-size: clamp(15px, 2.3vw, 25px);
+  line-height: 1.6;
+  margin: 0 0 20px;
+  max-width: 470px;
+}
+.card-front strong {
+  font-size: 14px;
+  color: #ecb86c;
+}
+.card-continue {
+  margin: 24px auto 0;
+  width: 240px;
+  min-height: 48px;
+}
+.is-dice-active .opening-order {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.is-dice-active .game-dice {
+  visibility: hidden;
+}
+.is-dice-active .game-event {
+  display: none;
+}
+.building-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+.building-actions p {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 0;
+}
+.building-actions .primary:disabled {
+  cursor: not-allowed;
+}
+.dice-result-label {
+  position: absolute;
+  top: calc(50% + 130px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1b2018dc;
+  border: 1px solid #d9be8666;
+  border-radius: 30px;
+  padding: 12px 20px;
+  color: #fae7bc;
+  font-family: "Space Grotesk";
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 4;
+}
+@media (orientation: portrait) {
+  .card-front {
+    padding: 8%;
+  }
+  .card-front h2 {
+    margin: 9px 0 12px;
+    font-size: 23px;
+  }
+  .card-front p {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .card-front .eyebrow {
+    font-size: 6px;
+    letter-spacing: 1px;
+  }
+  .card-front strong {
+    font-size: 12px;
+  }
+  .dice-result-label {
+    top: calc(50% + 85px);
+    font-size: 15px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .card-reveal-stage {
+    width: min(450px, 65vw);
+  }
+  .flipping-card {
+    max-height: calc(100dvh - 100px);
+    aspect-ratio: auto;
+    height: 270px;
+  }
+  .card-front h2 {
+    font-size: 24px;
+    margin: 9px 0 12px;
+  }
+  .card-front p {
+    font-size: 17px;
+    margin-bottom: 12px;
+  }
+  .card-continue {
+    margin-top: 12px;
+  }
+  .dice-result-label {
+    top: calc(50% + 75px);
+    font-size: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flipping-card {
+    transition: none;
+  }
+}

@@ -18,7 +18,7 @@ const sequence = (...values: number[]) => {
 };
 const act = (
   s: GameState,
-  type: Action["type"],
+  type: Exclude<Action["type"], "build" | "sell-building">,
   random = sequence(0.01, 0.2),
 ) =>
   applyAction(
@@ -121,13 +121,16 @@ describe("validated transitions", () => {
   it("draws configurable cash cards", () => {
     const s = act(game(), "roll", sequence(0.01, 0.01, 0));
     expect(s.players[0].position).toBe(2);
-    expect(s.players[0].money).toBe(1600);
+    expect(s.phase).toBe("card");
+    expect(s.players[0].money).toBe(1500);
+    expect(act(s, "ack-card").players[0].money).toBe(1600);
   });
   it("grants a doubles turn and sends the third double to jail", () => {
     let s = game();
     for (let i = 0; i < 3; i++) {
       s = act(s, "roll", () => 0.01);
       if (s.phase === "purchase") s = act(s, "pass");
+      if (s.phase === "card") s = act(s, "ack-card");
       if (i < 2) {
         s = act(s, "end");
         expect(s.currentPlayerIndex).toBe(0);
@@ -192,12 +195,14 @@ describe("validated transitions", () => {
           s,
           s.phase === "roll"
             ? "roll"
-            : s.phase === "purchase"
-              ? s.players[s.currentPlayerIndex].money >=
-                BOARD[s.players[s.currentPlayerIndex].position].price!
-                ? "buy"
-                : "pass"
-              : "end",
+            : s.phase === "card"
+              ? "ack-card"
+              : s.phase === "purchase"
+                ? s.players[s.currentPlayerIndex].money >=
+                  BOARD[s.players[s.currentPlayerIndex].position].price!
+                  ? "buy"
+                  : "pass"
+                : "end",
           random,
         );
         for (const p of s.players) {

@@ -30,7 +30,7 @@ npm run preview
 - Simplified bankruptcy and last-player-standing victory; concede available from match options.
 - Versioned browser-local snapshot saved after every accepted action; resume from setup.
 
-This is a local alpha. Passing a purchase skips an auction. Cards currently choose cash effects randomly with replacement. Unpayable debt immediately bankrupts a player and transfers assets to the creditor or bank. No buildings, mortgages, trading, deck cycling, room codes, online synchronization, or host recovery yet. It does **not** yet satisfy the full traditional-rules or two-device multiplayer acceptance criteria.
+This is a local alpha. Passing a purchase skips an auction. Cards currently choose cash effects randomly with replacement. Unpayable debt immediately bankrupts a player and transfers assets to the creditor or bank. No mortgages, trading, deck cycling, room codes, online synchronization, or host recovery yet. It does **not** yet satisfy the full traditional-rules or two-device multiplayer acceptance criteria.
 
 ## Architecture
 
@@ -51,3 +51,11 @@ Original GLBs stay in `3d-models/figurines` locally. They total about 272 MB and
 The predev/prebuild scripts prepare assets automatically. `scripts/prepare-models.mjs` hashes inputs, simplifies meshes, resizes textures to 1024 pixels, and applies WebP/Meshopt compression using [glTF Transform](https://gltf-transform.dev/). `scripts/sync-assets.mjs` prepares the cemetery WebP and copies the runtime assets into `public/assets`. Original artwork is preserved. Runtime files and the generated import catalog are ignored in Git and regenerated before Vite starts or builds.
 
 Models load lazily, normalize to the board scale, and inherit the existing movement and camera sequences. A procedural token remains available while a model loads or if it fails. The supplied GLBs contain static figures, so movement uses the game's existing hop/path animation rather than embedded skeletal clips.
+
+## Houses, inns, dice and card reveals
+
+Open an owned property from a player badge to build or sell. A complete unmortgaged color set is required, construction and selling stay even, and four houses upgrade to an inn. The bank holds 32 houses and 12 inns. Rent follows the building count; selling returns half the construction cost.
+
+The supplied house and inn models are optimized into assets/tabletop. The ivory die is extracted from Dice.obj without its display ground or alternate dice. Every roll throws these dice inside the board center, lets them settle, then lifts the matching result to the screen center before movement.
+
+Chance and Community Chest draws show the supplied back artwork, flip to the matching text template, and display the engine-selected effect. Continue resolves the effect once. A pending draw is saved so resuming cannot skip or duplicate it.

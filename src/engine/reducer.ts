@@ -4,6 +4,7 @@ import chance from "../data/chance.json";
 import community from "../data/communityChest.json";
 import type { Action, GameState, Player } from "./types";
 import { applyOpeningAction } from "./opening";
+import { buildingCost, buildingError } from "./buildings";
 export function secureRandom(): number {
   return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
 }
@@ -17,6 +18,8 @@ export function applyAction(
     throw new Error("It is another player’s turn.");
   if (current.phase === "opening")
     return applyOpeningAction(current, action, random);
+  if (current.phase === "card" && action.type !== "ack-card")
+    throw new Error("Read and resolve your card first.");
   if (
     ["advance-intro", "skip-intro", "opening-roll", "begin"].includes(
       action.type,
@@ -33,6 +36,10 @@ export function applyAction(
     debtor.money = 0;
     debtor.propertyIds.forEach((id) => {
       s.properties[id].ownerId = creditor?.id ?? null;
+      if (!creditor) {
+        s.properties[id].buildings = 0;
+        s.properties[id].mortgaged = false;
+      }
       if (creditor) creditor.propertyIds.push(id);
     });
     debtor.propertyIds = [];
@@ -79,13 +86,52 @@ export function applyAction(
       log(`${p.name} paid $${tile.amount} in tax.`);
     } else if (tile.type === "chance" || tile.type === "community") {
       const cards = tile.type === "chance" ? chance : community;
-      const card = cards[Math.floor(random() * cards.length)];
-      log(card.text);
-      if (card.amount > 0) p.money += card.amount;
-      else pay(-card.amount);
+      const index = Math.floor(random() * cards.length),
+        card = cards[index];
+      s.pendingCard = {
+        deck: tile.type,
+        index,
+        text: card.text,
+        amount: card.amount,
+        playerId: p.id,
+        revision: s.revision + 1,
+      };
+      s.phase = "card";
+      log(
+        `${p.name} drew a ${tile.type === "chance" ? "Chance" : "Community Chest"} card.`,
+      );
     } else if (tile.id === 30) jail();
   }
   switch (action.type) {
+    case "ack-card": {
+      if (
+        s.phase !== "card" ||
+        !s.pendingCard ||
+        s.pendingCard.playerId !== p.id
+      )
+        throw new Error("There is no card to resolve.");
+      const card = s.pendingCard;
+      s.pendingCard = null;
+      s.phase = "end";
+      log(card.text);
+      if (card.amount > 0) p.money += card.amount;
+      else pay(-card.amount);
+      break;
+    }
+    case "build":
+    case "sell-building": {
+      const sell = action.type === "sell-building",
+        error = buildingError(s, p.id, action.spaceId, sell);
+      if (error) throw new Error(error);
+      const property = s.properties[action.spaceId],
+        cost = buildingCost(action.spaceId);
+      property.buildings += sell ? -1 : 1;
+      p.money += sell ? cost / 2 : -cost;
+      log(
+        `${p.name} ${sell ? "sold a building on" : property.buildings === 5 ? "built an inn on" : "built a house on"} ${BOARD[action.spaceId].name}.`,
+      );
+      break;
+    }
     case "roll": {
       if (s.phase !== "roll")
         throw new Error("Resolve this turn before rolling again.");

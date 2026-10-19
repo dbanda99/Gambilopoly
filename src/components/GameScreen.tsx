@@ -16,6 +16,9 @@ import type { Action, GameState } from "../engine/types";
 import "./game-screen.css";
 import "./cinematics.css";
 import OpeningSequence from "./OpeningSequence";
+import CardReveal from "./CardReveal";
+import DiceRollHUD from "./DiceRollHUD";
+import type { RollPresentation } from "../presentation/diceRoll";
 import { useReducedMotion } from "../presentation/useReducedMotion";
 import {
   PLAYER_SECONDS,
@@ -67,6 +70,8 @@ export default function GameScreen({
   state,
   moving,
   motion,
+  rollEvent,
+  diceActive,
   topDown,
   onView,
   onSelect,
@@ -77,12 +82,14 @@ export default function GameScreen({
   state: GameState;
   moving: boolean;
   motion: Movement | null;
+  rollEvent: RollPresentation | null;
+  diceActive: boolean;
   topDown: boolean;
   onView: () => void;
   onSelect: (id: number) => void;
   onOptions: () => void;
   onRules: () => void;
-  onAction: (type: Action["type"]) => void;
+  onAction: (type: Exclude<Action["type"], "build" | "sell-building">) => void;
 }) {
   const [history, setHistory] = useState(false),
     [inspected, setInspected] = useState<string | null>(null),
@@ -153,7 +160,7 @@ export default function GameScreen({
   }
   return (
     <main
-      className={`game-screen ${opening ? "is-opening" : ""}`}
+      className={`game-screen ${opening ? "is-opening" : ""} ${diceActive ? "is-dice-active" : ""}`}
       aria-label="Gambilopoly game"
     >
       <div className="game-world">
@@ -164,9 +171,12 @@ export default function GameScreen({
           motion={motion}
           cinematic={cinematic}
           reducedMotion={reducedMotion}
+          rollEvent={rollEvent}
+          diceActive={diceActive}
         />
       </div>
       <div className="game-vignette" />
+      {diceActive && rollEvent && <DiceRollHUD roll={rollEvent} />}
       <div className="game-tools" aria-label="Game controls">
         <button
           className="game-icon"
@@ -385,6 +395,7 @@ export default function GameScreen({
           state={state}
           onAction={onAction}
           reducedMotion={reducedMotion}
+          diceActive={diceActive}
         />
       ) : (
         <section
@@ -412,18 +423,22 @@ export default function GameScreen({
                     {current.name}
                     {purchase
                       ? " is considering a purchase"
-                      : moving
-                        ? " is on the move"
-                        : current.inJail
-                          ? " is in the Dungeon"
-                          : "’s turn"}
+                      : diceActive
+                        ? " is rolling"
+                        : moving
+                          ? " is on the move"
+                          : current.inJail
+                            ? " is in the Dungeon"
+                            : "’s turn"}
                   </strong>
                   <span>
-                    {moving
-                      ? "Following the moonlit path…"
-                      : purchase
-                        ? tile.name
-                        : tile.name}
+                    {diceActive
+                      ? "The dice decide your next stop…"
+                      : moving
+                        ? "Following the moonlit path…"
+                        : purchase
+                          ? tile.name
+                          : tile.name}
                   </span>
                 </div>
               </div>
@@ -488,6 +503,14 @@ export default function GameScreen({
         <div className="game-event" role="status">
           {state.log[0]}
         </div>
+      )}
+      {state.phase === "card" && state.pendingCard && !moving && (
+        <CardReveal
+          key={state.pendingCard.revision}
+          card={state.pendingCard}
+          reducedMotion={reducedMotion}
+          onContinue={() => onAction("ack-card")}
+        />
       )}
       <div className="game-camera-hint">
         Drag to orbit · Scroll or pinch to zoom · Tap a space to inspect

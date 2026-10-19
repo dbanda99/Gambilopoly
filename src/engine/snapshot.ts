@@ -27,7 +27,18 @@ const snapshot = z.object({
     id: z.string(),
     players: z.array(player).min(2).max(4),
     currentPlayerIndex: integer.max(3),
-    phase: z.enum(["opening", "roll", "purchase", "end"]),
+    phase: z.enum(["opening", "roll", "purchase", "card", "end"]),
+    pendingCard: z
+      .object({
+        deck: z.enum(["chance", "community"]),
+        index: integer,
+        text: z.string(),
+        amount: z.number().int(),
+        playerId: z.string(),
+        revision: integer,
+      })
+      .nullable()
+      .optional(),
     opening: z
       .object({
         stage: z.enum(["tour", "introductions", "order", "ready"]),
@@ -81,6 +92,13 @@ export function parseSnapshot(value: unknown): GameState | null {
   const s = result.data.state;
   const ids = new Set(s.players.map((p) => p.id));
   if (!s.players[s.currentPlayerIndex]) return null;
+  if (
+    s.phase === "card" &&
+    (!s.pendingCard ||
+      s.pendingCard.playerId !== s.players[s.currentPlayerIndex].id)
+  )
+    return null;
+  if (s.phase !== "card" && s.pendingCard) return null;
   if (s.phase === "opening") {
     const o = s.opening;
     if (!o || s.status !== "playing" || o.spotlightIndex >= s.players.length)

@@ -1,0 +1,17 @@
+{
+  "house": {
+    "hash": "5e565fcb8ed620cbdd4191ad8d93dfe44068dfd8c688ffa5e0967bf0f42122df",
+    "sourceBytes": 40945528,
+    "webBytes": 1344784
+  },
+  "inn": {
+    "hash": "8a858f43333e4802938c1409bb2d69a498f81dc25d842bc6344d8d0177a125c6",
+    "sourceBytes": 56390700,
+    "webBytes": 1759468
+  },
+  "dice": {
+    "hash": "27576c0114303282bbf355f4f3f916537a73539f2d6caf7979cea075bd383bed",
+    "sourceBytes": 7326233,
+    "webBytes": 117816
+  }
+}
