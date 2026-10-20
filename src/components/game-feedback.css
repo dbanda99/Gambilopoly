@@ -1,0 +1,352 @@
+.game-announcements {
+  position: absolute;
+  top: 90px;
+  left: calc(50% - 95px);
+  transform: translateX(-50%);
+  width: min(570px, calc(100% - 360px));
+  z-index: 7;
+  pointer-events: none;
+}
+.game-announcement {
+  display: flex;
+  gap: 17px;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+  padding: 23px 52px 20px 22px;
+  border: 1px solid color-mix(in srgb, var(--notice-color) 65%, transparent);
+  border-left: 4px solid var(--notice-color);
+  border-radius: 17px;
+  background: linear-gradient(125deg, #251b31f5, #14171af2);
+  box-shadow:
+    0 12px 50px #0006,
+    0 0 30px #0002;
+  backdrop-filter: blur(16px);
+  color: #fff6e7;
+  pointer-events: auto;
+  animation: announcement-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.announcement-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--notice-color);
+  width: 47px;
+  height: 47px;
+  background: color-mix(in srgb, var(--notice-color) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--notice-color) 30%, transparent);
+  border-radius: 14px;
+}
+.announcement-copy {
+  min-width: 0;
+  flex: 1;
+}
+.announcement-label {
+  font-size: 8px;
+  letter-spacing: 1.7px;
+  color: var(--notice-color);
+  font-weight: 700;
+}
+.announcement-copy h2 {
+  font-family: "Space Grotesk";
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.25;
+  margin: 7px 0 8px;
+  overflow-wrap: anywhere;
+}
+.announcement-copy p {
+  font-size: 14px;
+  color: #ded0e0;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.announcement-amount {
+  font-family: "Space Grotesk";
+  font-size: 29px;
+  color: var(--notice-color);
+  margin: 18px -28px 0 0;
+  white-space: nowrap;
+}
+.announcement-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #c4b5ce;
+}
+.announcement-close:hover {
+  background: #ffffff10;
+}
+.announcement-history {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 10px 0 0;
+  font-size: 10px;
+  color: #bbaac2;
+}
+.announcement-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--notice-color);
+  opacity: 0.65;
+  transform-origin: left;
+  animation: announcement-progress var(--notice-duration) linear both;
+}
+.notice-win {
+  box-shadow:
+    0 12px 65px #0008,
+    0 0 40px #e4ae5d38;
+  border-color: #dfbb75;
+}
+.game-announcement.is-closing {
+  animation: announcement-out 0.22s ease-in forwards;
+  pointer-events: none;
+}
+@keyframes announcement-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+@keyframes announcement-in {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes announcement-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+.money-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 14;
+  pointer-events: none;
+  overflow: hidden;
+}
+.flying-note {
+  position: absolute;
+  width: 82px;
+  height: auto;
+  filter: drop-shadow(0 4px 7px #0009);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: money-flight 1.1s cubic-bezier(0.35, 0.05, 0.35, 1) both;
+}
+@keyframes money-flight {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--note-angle)) scale(0.65);
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+    transform: translate(
+        calc(-50% + var(--dx) * 0.48 + var(--bend-x)),
+        calc(-50% + var(--dy) * 0.48 + var(--bend-y))
+      )
+      rotate(calc(var(--note-angle) + 25deg)) scale(1.12);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
+      rotate(-12deg) scale(0.55);
+  }
+}
+.money-change {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: "Space Grotesk";
+  font-size: 27px;
+  white-space: nowrap;
+  text-shadow:
+    0 2px 5px #000,
+    0 0 14px #000;
+  border: 1px solid #ffffff35;
+  padding: 6px 12px;
+  background: #15101de8;
+  border-radius: 12px;
+  opacity: 0;
+  animation: money-total 1.15s ease-out both;
+}
+.money-change.is-debit {
+  color: #ff9d9f;
+}
+.money-change.is-credit {
+  color: #b1f1b5;
+}
+@keyframes money-total {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -30%) scale(0.85);
+  }
+  18%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150%) scale(1.05);
+  }
+}
+.history-popover {
+  max-width: 440px;
+}
+.history-popover ol {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.history-popover li {
+  font-size: 14px;
+  line-height: 1.7;
+  padding-block: 9px;
+}
+.purchase-overlay {
+  animation: purchase-feedback-in 0.35s ease both;
+}
+@keyframes purchase-feedback-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+.game-turn-dock {
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+.session-indicator.is-paused {
+  font-size: 15px;
+  padding: 16px 24px;
+  max-width: min(650px, 85vw);
+  box-shadow: 0 8px 35px #0006;
+}
+.error-toast {
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 17px 22px;
+  box-shadow: 0 10px 40px #0006;
+}
+@media (orientation: portrait) {
+  .game-announcements {
+    top: 211px;
+    left: 50%;
+    width: calc(100% - 24px);
+  }
+  .game-announcement {
+    padding: 17px 44px 15px 16px;
+    gap: 12px;
+  }
+  .announcement-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+  .announcement-icon svg {
+    width: 22px;
+  }
+  .announcement-copy h2 {
+    font-size: 21px;
+  }
+  .announcement-copy p {
+    font-size: 13px;
+  }
+  .announcement-label {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+  .announcement-amount {
+    font-size: 24px;
+    margin-right: -27px;
+  }
+  .flying-note {
+    width: 48px;
+  }
+  .money-change {
+    font-size: 21px;
+    padding: 5px 9px;
+  }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .game-announcements {
+    top: 66px;
+    width: min(430px, calc(100% - 270px));
+    left: calc(50% - 60px);
+  }
+  .game-announcement {
+    padding: 12px 40px 12px 14px;
+    gap: 10px;
+  }
+  .announcement-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .announcement-copy h2 {
+    font-size: 19px;
+    margin: 4px 0;
+  }
+  .announcement-copy p {
+    font-size: 12px;
+  }
+  .announcement-amount {
+    font-size: 23px;
+  }
+  .announcement-history {
+    padding-top: 5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-announcement,
+  .purchase-overlay {
+    animation: feedback-fade 0.15s both;
+  }
+  .money-change {
+    animation-name: feedback-fade;
+    animation-duration: 1.5s;
+  }
+  .flying-note {
+    display: none;
+  }
+  .announcement-progress {
+    animation: none;
+  }
+}
+@keyframes feedback-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

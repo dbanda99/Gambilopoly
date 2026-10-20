@@ -14,6 +14,7 @@ import {
 import { TOKENS } from "../engine/boardData";
 import type { Token } from "../engine/types";
 import PlayerModel from "../three/PlayerModel";
+import LobbyChat from "./LobbyChat";
 import { readSave, useGame } from "../store";
 import { COLORS, canStart, type Member } from "../multiplayer/lobby";
 import {
@@ -436,36 +437,41 @@ export default function ModeLobby({ onBack }: { onBack: () => void }) {
               </article>
             ))}
           </section>
-          <footer className="lobby-launch">
-            <div>
-              <strong>
-                {isHost ? "Your game, your gathering." : "Ready for the night?"}
-              </strong>
-              <p>
-                {isHost
-                  ? canStart(lobby)
-                    ? "Everyone is ready. Let the haunting begin."
-                    : "At least two players are needed. Wait for your friends to mark Ready."
-                  : "Your host starts the match when everyone is ready."}
-              </p>
-            </div>
-            {isHost ? (
-              <button
-                className="primary"
-                disabled={session.status !== "lobby" || !canStart(lobby)}
-                onClick={startMatch}
-              >
-                Start game <ArrowRight size={20} />
-              </button>
-            ) : (
-              <button className="primary" onClick={toggleReady}>
-                {lobby.members.find((m) => m.id === session.me)?.ready
-                  ? "Not ready"
-                  : "Ready to play"}{" "}
-                <Check size={19} />
-              </button>
-            )}
-          </footer>
+          <div className={session.mode === "single" ? "" : "lobby-bottom"}>
+            {session.mode !== "single" && <LobbyChat />}
+            <footer className="lobby-launch">
+              <div>
+                <strong>
+                  {isHost
+                    ? "Your game, your gathering."
+                    : "Ready for the night?"}
+                </strong>
+                <p>
+                  {isHost
+                    ? canStart(lobby)
+                      ? "Everyone is ready. Let the haunting begin."
+                      : "At least two players are needed. Wait for your friends to mark Ready."
+                    : "Your host starts the match when everyone is ready."}
+                </p>
+              </div>
+              {isHost ? (
+                <button
+                  className="primary"
+                  disabled={session.status !== "lobby" || !canStart(lobby)}
+                  onClick={startMatch}
+                >
+                  Start game <ArrowRight size={20} />
+                </button>
+              ) : (
+                <button className="primary" onClick={toggleReady}>
+                  {lobby.members.find((m) => m.id === session.me)?.ready
+                    ? "Not ready"
+                    : "Ready to play"}{" "}
+                  <Check size={19} />
+                </button>
+              )}
+            </footer>
+          </div>
         </>
       )}
     </main>

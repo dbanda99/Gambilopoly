@@ -55,6 +55,7 @@ export interface OpeningState {
   winnerId: string | null;
 }
 export interface GameState {
+  transactions?: MoneyTransaction[];
   mode?: "single" | "online" | "local";
   id: string;
   players: Player[];
@@ -75,6 +76,13 @@ export interface GameState {
   } | null;
   opening?: OpeningState | null;
   pendingCard?: PendingCard | null;
+}
+export interface MoneyTransaction {
+  id: string;
+  fromId: string | null;
+  toId: string | null;
+  amount: number;
+  reason: string;
 }
 export type Action =
   | { type: "build" | "sell-building"; playerId: string; spaceId: number }

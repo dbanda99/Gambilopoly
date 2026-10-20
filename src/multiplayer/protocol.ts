@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { profileSchema } from "./lobby";
+import { chatText } from "./chat";
 const simple = z.enum([
   "roll",
   "buy",
@@ -22,6 +23,11 @@ export const actionSchema = z.union([
   }),
 ]);
 export const requestSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("chat"),
+    requestId: z.string().min(1).max(80),
+    text: chatText,
+  }),
   z.object({
     type: z.literal("hello"),
     name: z.string().trim().min(1).max(24),

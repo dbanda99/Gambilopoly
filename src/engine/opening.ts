@@ -8,6 +8,7 @@ export function applyOpeningAction(
 ): GameState {
   const s = structuredClone(current),
     o = s.opening;
+  s.transactions = [];
   if (!o || s.phase !== "opening")
     throw new Error("The opening sequence has already finished.");
   const log = (text: string) => {

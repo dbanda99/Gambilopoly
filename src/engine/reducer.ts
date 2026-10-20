@@ -28,6 +28,22 @@ export function applyAction(
     throw new Error("The opening sequence has already finished.");
   const s: GameState = structuredClone(current),
     p = s.players[s.currentPlayerIndex];
+  s.transactions = [];
+  function transaction(
+    fromId: string | null,
+    toId: string | null,
+    amount: number,
+    reason: string,
+  ) {
+    if (amount > 0)
+      s.transactions!.push({
+        id: `${s.id}:${s.revision + 1}:${s.transactions!.length}`,
+        fromId,
+        toId,
+        amount,
+        reason,
+      });
+  }
   const log = (message: string) => {
     s.log = [message, ...s.log].slice(0, 60);
   };
@@ -52,11 +68,13 @@ export function applyAction(
       log(`${alive[0].name} owns the night!`);
     }
   }
-  function pay(amount: number, creditor?: Player) {
+  function pay(amount: number, creditor?: Player, reason = "Payment") {
     const paid = Math.min(p.money, amount);
     p.money -= paid;
     if (creditor) creditor.money += paid;
+    transaction(p.id, creditor?.id ?? null, paid, reason);
     if (paid < amount) bankrupt(p, creditor);
+    return paid;
   }
   function jail() {
     p.position = 10;
@@ -78,11 +96,13 @@ export function applyAction(
       } else if (property.ownerId !== p.id) {
         const owner = s.players.find((x) => x.id === property.ownerId)!;
         const rent = rentFor(s, tile.id);
-        pay(rent, owner);
-        log(`${p.name} paid $${rent} rent to ${owner.name}.`);
+        const paid = pay(rent, owner, `Rent · ${tile.name}`);
+        log(
+          `${p.name} paid $${paid} rent to ${owner.name}.${paid < rent ? ` $${rent - paid} could not be paid.` : ""}`,
+        );
       }
     } else if (tile.type === "tax") {
-      pay(tile.amount!);
+      pay(tile.amount!, undefined, `Tax · ${tile.name}`);
       log(`${p.name} paid $${tile.amount} in tax.`);
     } else if (tile.type === "chance" || tile.type === "community") {
       const cards = tile.type === "chance" ? chance : community;
@@ -114,8 +134,10 @@ export function applyAction(
       s.pendingCard = null;
       s.phase = "end";
       log(card.text);
-      if (card.amount > 0) p.money += card.amount;
-      else pay(-card.amount);
+      if (card.amount > 0) {
+        p.money += card.amount;
+        transaction(null, p.id, card.amount, "Card reward");
+      } else pay(-card.amount, undefined, "Card payment");
       break;
     }
     case "build":
@@ -127,6 +149,16 @@ export function applyAction(
         cost = buildingCost(action.spaceId);
       property.buildings += sell ? -1 : 1;
       p.money += sell ? cost / 2 : -cost;
+      transaction(
+        sell ? null : p.id,
+        sell ? p.id : null,
+        sell ? cost / 2 : cost,
+        sell
+          ? "Building sold"
+          : property.buildings === 5
+            ? "Inn upgrade"
+            : "House built",
+      );
       log(
         `${p.name} ${sell ? "sold a building on" : property.buildings === 5 ? "built an inn on" : "built a house on"} ${BOARD[action.spaceId].name}.`,
       );
@@ -156,7 +188,7 @@ export function applyAction(
           p.jailTurns = 0;
           log("Doubles! The dungeon door opens.");
         } else if (p.jailTurns === 3) {
-          pay(50);
+          pay(50, undefined, "Dungeon bail");
           if (p.bankrupt) break;
           p.inJail = false;
           p.jailTurns = 0;
@@ -172,6 +204,7 @@ export function applyAction(
       p.position = (from + steps) % 40;
       if (from + steps >= 40) {
         p.money += 200;
+        transaction(null, p.id, 200, "Passed Witching Hour");
         log(`${p.name} passed Witching Hour and collected $200.`);
       }
       s.movement = { playerId: p.id, from, steps, revision: s.revision + 1 };
@@ -187,6 +220,7 @@ export function applyAction(
       if (s.properties[tile.id].ownerId)
         throw new Error("This property already has an owner.");
       p.money -= tile.price!;
+      transaction(p.id, null, tile.price!, `Property purchased · ${tile.name}`);
       p.propertyIds.push(tile.id);
       s.properties[tile.id].ownerId = p.id;
       s.phase = "end";
@@ -204,6 +238,7 @@ export function applyAction(
         throw new Error("Bail is only available before rolling in jail.");
       if (p.money < 50) throw new Error("Bail costs $50.");
       p.money -= 50;
+      transaction(p.id, null, 50, "Dungeon bail");
       p.inJail = false;
       p.jailTurns = 0;
       log(`${p.name} paid $50 bail.`);

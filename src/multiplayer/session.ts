@@ -11,6 +11,12 @@ import {
 } from "./lobby";
 import { requestSchema } from "./protocol";
 import { authorizeAction } from "./authority";
+import {
+  chatHistorySchema,
+  chatText,
+  makeChat,
+  type ChatMessage,
+} from "./chat";
 import { createGame } from "../engine/gameState";
 import { applyAction } from "../engine/reducer";
 import { parseSnapshot } from "../engine/snapshot";
@@ -25,6 +31,8 @@ interface Session {
   lobby: RoomLobby | null;
   message: string;
   pending: boolean;
+  chat: ChatMessage[];
+  chatPending: boolean;
 }
 const initial: Session = {
   mode: null,
@@ -33,6 +41,8 @@ const initial: Session = {
   lobby: null,
   message: "",
   pending: false,
+  chat: [],
+  chatPending: false,
 };
 export const useSession = create<Session>(() => ({ ...initial }));
 let peer: Peer | null = null,
@@ -46,6 +56,7 @@ const report = (e: unknown) =>
   useSession.setState({
     message: e instanceof Error ? e.message : String(e),
     pending: false,
+    chatPending: false,
   });
 export function leaveSession() {
   generation++;
@@ -58,7 +69,7 @@ export function leaveSession() {
   busyUntil = 0;
   old?.destroy();
   setActionController(null);
-  useGame.setState({ state: null, rollEvent: null, error: "" });
+  useGame.setState({ state: null, rollEvent: null, feedback: null, error: "" });
   useSession.setState({ ...initial });
 }
 function peerOptions(): PeerOptions {
@@ -104,7 +115,58 @@ function sync(rolled?: Action["type"]) {
     });
   }
   for (const [id, conn] of connections)
-    send(conn, { type: "sync", lobby: s.lobby, game, rolled, me: id });
+    send(conn, {
+      type: "sync",
+      lobby: s.lobby,
+      game,
+      rolled,
+      me: id,
+      ...(!game ? { chat: s.chat } : {}),
+    });
+}
+function publishChat(message: ChatMessage) {
+  const chat = [...useSession.getState().chat, message].slice(-60);
+  useSession.setState({ chat, chatPending: false });
+  for (const conn of connections.values()) send(conn, { type: "chat", chat });
+}
+function lobbyActivity(text: string) {
+  publishChat({
+    id: crypto.randomUUID(),
+    senderId: null,
+    name: "Lobby",
+    color: "#d6b5e2",
+    text,
+    kind: "system",
+    createdAt: Date.now(),
+  });
+}
+export function sendChat(text: string): boolean {
+  try {
+    const s = useSession.getState();
+    if (s.status !== "lobby" || !s.lobby || s.mode === "single")
+      throw Error("Chat is available in multiplayer lobbies.");
+    const normalized = chatText.parse(text);
+    if (s.mode === "guest") {
+      if (s.chatPending) return false;
+      useSession.setState({ chatPending: true });
+      send(upstream!, {
+        type: "chat",
+        requestId: crypto.randomUUID(),
+        text: normalized,
+      });
+      const version = generation;
+      setTimeout(() => {
+        if (version === generation && useSession.getState().chatPending)
+          report(
+            Error("Your message was not confirmed. Check your connection."),
+          );
+      }, 8000);
+    } else publishChat(makeChat(s.lobby, s.me, normalized, s.chat));
+    return true;
+  } catch (e) {
+    report(e);
+    return false;
+  }
 }
 function prepare(mode: "single" | "host", name: string) {
   leaveSession();
@@ -230,9 +292,22 @@ function acceptConnection(conn: DataConnection, version: number) {
           },
         });
         sync();
+        lobbyActivity(`${member.name} joined the lobby.`);
         return;
       }
       if (!memberId) throw Error("Join the lobby first.");
+      if (request.type === "chat") {
+        if (game)
+          throw Error("Lobby chat is closed while the match is playing.");
+        if (requests.has(request.requestId)) return;
+        requests.add(request.requestId);
+        if (requests.size > 128)
+          requests.delete(requests.values().next().value!);
+        publishChat(
+          makeChat(lobby, memberId, request.text, useSession.getState().chat),
+        );
+        return;
+      }
       if (request.type === "action") {
         if (requests.has(request.requestId)) return;
         requests.add(request.requestId);
@@ -260,6 +335,10 @@ function acceptConnection(conn: DataConnection, version: number) {
           },
         });
       sync();
+      if (request.type === "ready")
+        lobbyActivity(
+          `${lobby.members.find((m) => m.id === memberId)?.name} is ${request.ready ? "ready to play" : "choosing their character"}.`,
+        );
     } catch (e) {
       send(conn, {
         type: "error",
@@ -292,6 +371,10 @@ function acceptConnection(conn: DataConnection, version: number) {
       message: game ? "A player disconnected. The match is paused." : "",
     });
     sync();
+    if (!game)
+      lobbyActivity(
+        `${lobby.members.find((m) => m.id === memberId)?.name ?? "A player"} left the lobby.`,
+      );
   };
   conn.on("close", disconnected);
   conn.on("error", disconnected);
@@ -355,6 +438,11 @@ export function joinRoom(value: string, name: string) {
             send(conn, { type: "pong" });
             return;
           }
+          if (message.type === "chat") {
+            const chat = chatHistorySchema.parse(message.chat);
+            useSession.setState({ chat, chatPending: false });
+            return;
+          }
           if (["rejected", "kicked", "error"].includes(String(message.type))) {
             report(Error(String(message.message).slice(0, 200)));
             if (message.type !== "error") {
@@ -389,6 +477,9 @@ export function joinRoom(value: string, name: string) {
               : "lobby",
             message: "",
             pending: false,
+            ...(message.chat
+              ? { chat: chatHistorySchema.parse(message.chat) }
+              : {}),
           });
           if (next) {
             const rolled =
@@ -482,6 +573,10 @@ export function kickPlayer(id: string) {
     }
     useSession.setState({ lobby });
     sync();
+    if (conn)
+      lobbyActivity(
+        `${s.lobby?.members.find((m) => m.id === id)?.name ?? "A player"} was removed by the host.`,
+      );
   } catch (e) {
     report(e);
   }

@@ -18,6 +18,7 @@ import "./cinematics.css";
 import OpeningSequence from "./OpeningSequence";
 import CardReveal from "./CardReveal";
 import DiceRollHUD from "./DiceRollHUD";
+import GameFeedback from "./GameFeedback";
 import type { RollPresentation } from "../presentation/diceRoll";
 import { useReducedMotion } from "../presentation/useReducedMotion";
 import {
@@ -238,6 +239,7 @@ export default function GameScreen({
         {state.players.map((player, index) => (
           <button
             key={player.id}
+            data-player-id={player.id}
             className={`player-badge ${index === activeIndex && state.status === "playing" ? "is-current" : ""} ${player.bankrupt ? "is-bankrupt" : ""}`}
             style={
               {
@@ -517,11 +519,16 @@ export default function GameScreen({
           )}
         </section>
       )}
-      {!opening && !purchase && !moving && (
-        <div className="game-event" role="status">
-          {state.log[0]}
-        </div>
-      )}
+      <GameFeedback
+        key={state.id}
+        state={state}
+        reduced={reducedMotion}
+        blocked={opening || purchase || state.phase === "card"}
+        onHistory={() => {
+          setHistory(true);
+          setInspected(null);
+        }}
+      />
       {state.phase === "card" && state.pendingCard && !moving && (
         <CardReveal
           key={state.pendingCard.revision}

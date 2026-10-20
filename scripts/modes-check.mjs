@@ -144,8 +144,45 @@ try {
   const guest = await page(`${base}/?room=${code}`);
   await join(guest, code, "Friend");
   await host.locator(".lobby-seat").filter({ hasText: "Friend" }).waitFor();
+  await host
+    .getByLabel("Message to lobby", { exact: true })
+    .fill("Welcome to the haunted lobby!");
+  await host.getByRole("button", { name: "Send message", exact: true }).click();
+  await guest
+    .getByRole("log", { name: "Lobby messages" })
+    .getByText("Welcome to the haunted lobby!", { exact: true })
+    .waitFor();
+  await guest
+    .getByLabel("Message to lobby", { exact: true })
+    .fill("<img src=x onerror=alert(1)> Ready!");
+  await guest
+    .getByRole("button", { name: "Send message", exact: true })
+    .click();
+  await host
+    .getByRole("log", { name: "Lobby messages" })
+    .getByText("<img src=x onerror=alert(1)> Ready!", { exact: true })
+    .waitFor();
+  assert(
+    (await host.locator(".chat-message p img").count()) === 0,
+    "Chat interpreted HTML",
+  );
   const third = await page();
   await join(third, code, "Uninvited");
+  await third
+    .getByRole("log", { name: "Lobby messages" })
+    .getByText("Welcome to the haunted lobby!", { exact: true })
+    .waitFor();
+  await host.screenshot({ path: "test-results/lobby-chat-desktop.png" });
+  await guest.setViewportSize({ width: 390, height: 844 });
+  await guest.locator(".lobby-chat").scrollIntoViewIfNeeded();
+  await guest.screenshot({ path: "test-results/lobby-chat-mobile.png" });
+  assert(
+    await guest.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+    "Mobile chat overflows",
+  );
+  await guest.setViewportSize({ width: 1440, height: 960 });
   await host
     .getByRole("button", { name: "Remove Uninvited", exact: true })
     .click();

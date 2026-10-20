@@ -73,3 +73,13 @@ The default transport uses PeerJS cloud signaling and WebRTC data channels. The 
 Optional Vite build variables: VITE_PEER_HOST, VITE_PEER_PORT, VITE_PEER_PATH and VITE_PEER_SECURE select a different signaling server; VITE_ICE_SERVERS accepts a JSON array of browser RTCIceServer entries. Values bundled with Vite are visible to browsers. Use short-lived relay credentials when supplying TURN. No environment variables are needed for the default cloud signaling service.
 
 Verification: npm test covers rules, bots, lobby authorization, protocol validation and snapshots. For local WebRTC browser checks, run node scripts/peer-test-server.mjs, start Vite with VITE_PEER_HOST=127.0.0.1 and VITE_PEER_PORT=9000, then run node scripts/modes-check.mjs. The check defaults to port 5174; set GAME_TEST_URL to the Vite URL. This verifies isolated Chrome clients, not separate physical devices or restrictive network traversal.
+
+## Lobby chat and game feedback
+
+Multiplayer lobbies include text chat, with the last 60 messages available to late joiners. Messages are limited to 280 characters, rendered as plain text, and rate-limited by the host. Sender identity comes from the connection�s assigned lobby member. Chat also shows join, departure, ready and removal activity; it closes when the match starts. History stays in room memory and is cleared when the session ends.
+
+Every money movement now has a structured transaction with the actual amount paid, payer/payee IDs and reason. Partial payments before bankruptcy animate only the amount transferred. Confirmed rent creates seven animated money-note sprites between the two players� on-screen badges after token movement, alongside signed cash deltas. Bank payments/rewards show balance deltas. Reduced-motion mode uses fades instead of flying notes.
+
+Large event banners cover turns, payments, purchases, building changes, jail, bankruptcy and victory, with a dismiss control and activity-history shortcut. Banners pause while hovered/focused and queue recent important events; rapid building updates are combined. Duplicate snapshots and saved-game resumes do not replay effects. The source money-note PNG remains intact; prebuild produces a small WebP for the animation.
+
+Additional browser checks: node scripts/feedback-check.mjs verifies desktop/mobile money trajectories, notification readability and cleanup on port 5174. The multiplayer modes check also verifies chat synchronization, late-join history and literal HTML text handling.

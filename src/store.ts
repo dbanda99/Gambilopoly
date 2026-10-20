@@ -3,6 +3,7 @@ import { applyAction } from "./engine/reducer";
 import type { Action, GameState } from "./engine/types";
 import { parseSnapshot } from "./engine/snapshot";
 import type { RollPresentation } from "./presentation/diceRoll";
+import { createFeedback, type Feedback } from "./presentation/feedback";
 const key = "gambilopoly-local-v1";
 let actionController: ((action: Action) => void) | null = null;
 export function setActionController(controller: typeof actionController) {
@@ -19,6 +20,7 @@ export const useGame = create<{
   state: GameState | null;
   error: string;
   rollEvent: RollPresentation | null;
+  feedback: Feedback | null;
   start: (state: GameState) => void;
   receive: (state: GameState, rolled?: Action["type"]) => void;
   dispatch: (action: Action) => void;
@@ -27,8 +29,9 @@ export const useGame = create<{
   state: null,
   error: "",
   rollEvent: null,
+  feedback: null,
   start: (state) => {
-    set({ state, error: "", rollEvent: null });
+    set({ state, error: "", rollEvent: null, feedback: null });
     try {
       localStorage.setItem(key, JSON.stringify({ version: 1, state }));
     } catch {}
@@ -40,26 +43,18 @@ export const useGame = create<{
     }
     try {
       const state = applyAction(get().state!, action);
-      get().start(state);
-      if (
-        (action.type === "roll" || action.type === "opening-roll") &&
-        state.dice
-      )
-        set({
-          rollEvent: {
-            dice: state.dice,
-            playerId: action.playerId,
-            revision: state.revision,
-            purpose: action.type === "roll" ? "turn" : "opening",
-            startedAt: performance.now(),
-          },
-        });
+      get().receive(state, action.type);
     } catch (e) {
       set({ error: (e as Error).message });
     }
   },
   receive: (state, rolled) => {
+    const previous = get().state;
+    if (previous?.id === state.id && previous.revision >= state.revision)
+      return;
     get().start(state);
+    if (previous?.id === state.id)
+      set({ feedback: createFeedback(previous, state, rolled) });
     if ((rolled === "roll" || rolled === "opening-roll") && state.dice)
       set({
         rollEvent: {

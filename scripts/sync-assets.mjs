@@ -14,6 +14,10 @@ mkdirSync(output, { recursive: true });
 if (!existsSync("2d-textures"))
   throw new Error("Missing board source folder: 2d-textures");
 cpSync("2d-textures", path.join(output, "board"), { recursive: true });
+await sharp("2d-textures/money/money-note.png")
+  .resize({ width: 320, withoutEnlargement: true })
+  .webp({ quality: 90 })
+  .toFile(path.join(output, "board", "money", "money-note.webp"));
 for (const [source, destination] of [
   ["title-background-img.png", "title-background.webp"],
   ["game-text-title.png", "game-text-title.webp"],

@@ -29,6 +29,18 @@ const player = z.object({
 const snapshot = z.object({
   version: z.literal(1),
   state: z.object({
+    transactions: z
+      .array(
+        z.object({
+          id: z.string().max(140),
+          fromId: z.string().nullable(),
+          toId: z.string().nullable(),
+          amount: z.number().int().positive(),
+          reason: z.string().max(160),
+        }),
+      )
+      .max(8)
+      .optional(),
     mode: z.enum(["single", "online", "local"]).optional(),
     id: z.string(),
     players: z.array(player).min(2).max(4),
@@ -97,6 +109,15 @@ export function parseSnapshot(value: unknown): GameState | null {
   if (!result.success) return null;
   const s = result.data.state;
   const ids = new Set(s.players.map((p) => p.id));
+  if (
+    s.transactions?.some(
+      (t) =>
+        (t.fromId !== null && !ids.has(t.fromId)) ||
+        (t.toId !== null && !ids.has(t.toId)) ||
+        t.fromId === t.toId,
+    )
+  )
+    return null;
   if (!s.players[s.currentPlayerIndex]) return null;
   if (
     s.phase === "card" &&
