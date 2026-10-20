@@ -23,6 +23,12 @@ import { parseSnapshot } from "../engine/snapshot";
 import type { Action, GameState } from "../engine/types";
 import { useGame, setActionController } from "../store";
 import { DICE_SECONDS, movementDuration } from "../presentation/motion";
+import {
+  CONNECTION_TIMEOUT,
+  connectionError,
+  timeoutMessage,
+} from "./connection";
+import { randomId } from "../utils/id";
 type Mode = "single" | "host" | "guest" | null;
 interface Session {
   mode: Mode;
@@ -33,6 +39,9 @@ interface Session {
   pending: boolean;
   chat: ChatMessage[];
   chatPending: boolean;
+  connectionStep: string;
+  connectionDetails: string;
+  signalingReady: boolean;
 }
 const initial: Session = {
   mode: null,
@@ -43,6 +52,9 @@ const initial: Session = {
   pending: false,
   chat: [],
   chatPending: false,
+  connectionStep: "",
+  connectionDetails: "",
+  signalingReady: false,
 };
 export const useSession = create<Session>(() => ({ ...initial }));
 let peer: Peer | null = null,
@@ -89,6 +101,19 @@ function peerOptions(): PeerOptions {
       : {}),
   };
 }
+function connectionDetails(stage: string, error?: unknown) {
+  const type = (error as { type?: string } | null)?.type;
+  useSession.setState({
+    connectionStep: stage,
+    connectionDetails: [
+      `Stage: ${stage}`,
+      `Signaling: ${import.meta.env.VITE_PEER_HOST ? "custom server" : "PeerJS cloud"}`,
+      `ICE servers: ${import.meta.env.VITE_ICE_SERVERS ? "custom configuration" : "PeerJS default STUN and shared TURN"}`,
+      `Secure context: ${window.isSecureContext ? "yes" : "no (use the HTTPS game link)"}`,
+      ...(type ? [`Error: ${type}`] : []),
+    ].join(" · "),
+  });
+}
 function roomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from(
@@ -131,7 +156,7 @@ function publishChat(message: ChatMessage) {
 }
 function lobbyActivity(text: string) {
   publishChat({
-    id: crypto.randomUUID(),
+    id: randomId(),
     senderId: null,
     name: "Lobby",
     color: "#d6b5e2",
@@ -151,7 +176,7 @@ export function sendChat(text: string): boolean {
       useSession.setState({ chatPending: true });
       send(upstream!, {
         type: "chat",
-        requestId: crypto.randomUUID(),
+        requestId: randomId(),
         text: normalized,
       });
       const version = generation;
@@ -197,35 +222,52 @@ export function createRoom(name: string) {
   const lobby = prepare("host", name),
     version = generation;
   try {
+    connectionDetails("Registering room…");
     peer = new Peer(`gambilopoly-${lobby.code}`, peerOptions());
+    const roomPeer = peer;
     const timer = setTimeout(() => {
       if (
         generation === version &&
         useSession.getState().status === "connecting"
       ) {
-        report(
-          Error(
-            "Could not create the room. Check your connection and try again.",
-          ),
-        );
+        report(Error(timeoutMessage("signaling")));
         useSession.setState({ status: "error" });
+        roomPeer.destroy();
       }
-    }, 16000);
+    }, CONNECTION_TIMEOUT.signaling);
     peer.on("open", () => {
       clearTimeout(timer);
-      if (generation === version)
-        useSession.setState({ status: "lobby", message: "" });
+      if (generation === version && useSession.getState().status !== "error") {
+        connectionDetails("Room online");
+        useSession.setState({
+          status: game ? useSession.getState().status : "lobby",
+          signalingReady: true,
+          message: "",
+        });
+      }
     });
     peer.on("connection", (conn) => acceptConnection(conn, version));
-    peer.on("error", () => {
+    peer.on("error", (error) => {
       if (generation === version) {
-        report(Error("Room signaling is unavailable. Please try again."));
-        if (useSession.getState().status === "connecting")
+        connectionDetails("Room connection error", error);
+        report(Error(connectionError(error)));
+        if (useSession.getState().status === "connecting") {
+          clearTimeout(timer);
           useSession.setState({ status: "error" });
+          roomPeer.destroy();
+        }
       }
     });
     peer.on("disconnected", () => {
-      if (generation === version && peer && !peer.destroyed) peer.reconnect();
+      if (generation === version && !roomPeer.destroyed) {
+        connectionDetails("Reconnecting room signaling…");
+        useSession.setState({
+          signalingReady: false,
+          message:
+            "Room signaling disconnected. Reconnecting; new players must wait until Room online appears.",
+        });
+        roomPeer.reconnect();
+      }
     });
   } catch (e) {
     report(e);
@@ -242,9 +284,18 @@ function acceptConnection(conn: DataConnection, version: number) {
     send(conn, { type: "rejected", message });
     setTimeout(() => conn.close(), 250);
   };
-  const helloTimer = setTimeout(() => {
+  let helloTimer = setTimeout(() => {
     if (!memberId) conn.close();
-  }, 8000);
+  }, CONNECTION_TIMEOUT.channel);
+  // The PeerJS 'connection' event precedes the usable data channel. Give ICE
+  // its own budget, then start the admission deadline only after 'open'.
+  conn.on("open", () => {
+    clearTimeout(helloTimer);
+    lastSeen = Date.now();
+    helloTimer = setTimeout(() => {
+      if (!memberId) conn.close();
+    }, CONNECTION_TIMEOUT.admission);
+  });
   const heartbeat = setInterval(() => {
     if (generation !== version || closed) {
       clearInterval(heartbeat);
@@ -279,7 +330,7 @@ function acceptConnection(conn: DataConnection, version: number) {
           );
           return;
         }
-        const id = crypto.randomUUID(),
+        const id = randomId(),
           member = newMember(lobby, id, request.name);
         memberId = id;
         clearTimeout(helloTimer);
@@ -394,37 +445,97 @@ export function joinRoom(value: string, name: string) {
   useSession.setState({ mode: "guest", status: "connecting" });
   setActionController(requestAction);
   try {
+    connectionDetails("Contacting room service…");
     peer = new Peer(peerOptions());
-    const timer = setTimeout(() => {
+    const guestPeer = peer;
+    let timer: ReturnType<typeof setTimeout>;
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
+    let stage: keyof typeof CONNECTION_TIMEOUT = "signaling";
+    let failed = false;
+    const fail = (message: string, error?: unknown) => {
+      clearTimeout(timer);
+      clearInterval(heartbeat);
       if (
-        version === generation &&
-        useSession.getState().status === "connecting"
-      ) {
-        report(
-          Error(
-            "Could not reach this room. Check the code and ask the host to keep the lobby open.",
-          ),
-        );
-        useSession.setState({ status: "error" });
-        upstream?.close();
-      }
-    }, 16000);
+        failed ||
+        version !== generation ||
+        useSession.getState().status === "error"
+      )
+        return;
+      failed = true;
+      connectionDetails(useSession.getState().connectionStep, error);
+      useSession.setState({
+        status: game ? "paused" : "error",
+        message,
+        pending: false,
+        chatPending: false,
+        signalingReady: false,
+      });
+      guestPeer.destroy();
+    };
+    const deadline = (next: typeof stage) => {
+      clearTimeout(timer);
+      stage = next;
+      timer = setTimeout(
+        () => fail(timeoutMessage(stage)),
+        CONNECTION_TIMEOUT[stage],
+      );
+    };
+    deadline("signaling");
     peer.on("open", () => {
-      if (version !== generation) return;
-      const conn = peer!.connect(`gambilopoly-${code}`, {
+      if (
+        version !== generation ||
+        useSession.getState().status !== "connecting"
+      )
+        return;
+      connectionDetails("Opening peer connection…");
+      useSession.setState({ signalingReady: true });
+      deadline("channel");
+      const conn = guestPeer.connect(`gambilopoly-${code}`, {
         reliable: true,
         serialization: "json",
       });
       upstream = conn;
       let lastHost = Date.now();
-      conn.on("open", () =>
+      conn.on("iceStateChanged", (state) => {
+        if (
+          version !== generation ||
+          useSession.getState().status !== "connecting"
+        )
+          return;
+        connectionDetails(`Opening peer connection · ICE ${state}`);
+        if (state === "failed")
+          fail(connectionError({ type: "webrtc" }), { type: "webrtc" });
+      });
+      conn.on("open", () => {
+        if (
+          version !== generation ||
+          useSession.getState().status !== "connecting"
+        ) {
+          conn.close();
+          return;
+        }
+        lastHost = Date.now();
+        connectionDetails("Joining the host's lobby…");
+        deadline("admission");
+        // Heartbeats measure an established channel, never ICE negotiation.
+        heartbeat = setInterval(() => {
+          if (generation !== version) {
+            clearInterval(heartbeat);
+            return;
+          }
+          if (Date.now() - lastHost > 15000)
+            fail(
+              "Connection to the host was lost. Ask the host to keep the game tab open.",
+            );
+        }, 3000);
         send(conn, {
           type: "hello",
           name: name.trim().slice(0, 24) || "Guest",
-        }),
-      );
+        });
+      });
       conn.on("data", (raw) => {
-        if (version !== generation) return;
+        if (version !== generation || useSession.getState().status === "error")
+          return;
         try {
           if (
             !raw ||
@@ -444,11 +555,13 @@ export function joinRoom(value: string, name: string) {
             return;
           }
           if (["rejected", "kicked", "error"].includes(String(message.type))) {
-            report(Error(String(message.message).slice(0, 200)));
-            if (message.type !== "error") {
-              clearTimeout(timer);
-              useSession.setState({ status: "error" });
-            }
+            const text = String(message.message).slice(0, 250);
+            if (
+              message.type !== "error" ||
+              useSession.getState().status === "connecting"
+            )
+              fail(text);
+            else report(Error(text));
             return;
           }
           if (message.type !== "sync") return;
@@ -466,6 +579,7 @@ export function joinRoom(value: string, name: string) {
           if (next && game?.id === next.id && next.revision < game.revision)
             return;
           clearTimeout(timer);
+          connectionDetails("Connected to host");
           game = next;
           useSession.setState({
             me: message.me,
@@ -492,42 +606,16 @@ export function joinRoom(value: string, name: string) {
           report(e);
         }
       });
-      const lost = () => {
-        clearInterval(heartbeat);
-        clearTimeout(timer);
-        if (version !== generation || useSession.getState().status === "error")
-          return;
-        useSession.setState({
-          status: game ? "paused" : "error",
-          pending: false,
-          message:
-            "Connection to the host was lost. The host must keep the game open.",
-        });
-      };
-      const heartbeat = setInterval(() => {
-        if (generation !== version) {
-          clearInterval(heartbeat);
-          return;
-        }
-        if (Date.now() - lastHost > 15000) {
-          lost();
-          conn.close();
-        }
-      }, 3000);
-      conn.on("close", lost);
-      conn.on("error", lost);
+      conn.on("close", () =>
+        fail(
+          stage === "channel"
+            ? timeoutMessage("channel")
+            : "Connection to the host was lost. The host must keep the game open.",
+        ),
+      );
+      conn.on("error", (error) => fail(connectionError(error), error));
     });
-    peer.on("error", () => {
-      if (version === generation) {
-        clearTimeout(timer);
-        useSession.setState({
-          status: game ? "paused" : "error",
-          message:
-            "Unable to connect to the host. Check the code and try again.",
-          pending: false,
-        });
-      }
-    });
+    peer.on("error", (error) => fail(connectionError(error), error));
   } catch (e) {
     report(e);
     useSession.setState({ status: "error" });
@@ -588,7 +676,7 @@ export function addBot() {
     const lobby = s.lobby!,
       bot = newMember(
         lobby,
-        `bot-${crypto.randomUUID()}`,
+        `bot-${randomId()}`,
         `Bot ${lobby.members.length}`,
         true,
       );
@@ -663,7 +751,7 @@ function requestAction(action: Action) {
       useSession.setState({ pending: true });
       send(upstream!, {
         type: "action",
-        requestId: crypto.randomUUID(),
+        requestId: randomId(),
         revision: useGame.getState().state!.revision,
         action,
       });

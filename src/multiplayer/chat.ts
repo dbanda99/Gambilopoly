@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { RoomLobby } from "./lobby";
+import { randomId } from "../utils/id";
 export const chatText = z
   .string()
   .trim()
@@ -38,7 +39,7 @@ export function makeChat(
   if (last && now - last.createdAt < 750)
     throw Error("Please wait a moment before sending another message.");
   return {
-    id: crypto.randomUUID(),
+    id: randomId(),
     senderId,
     name: member.name,
     color: member.color,

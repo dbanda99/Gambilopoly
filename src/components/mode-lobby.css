@@ -489,3 +489,25 @@
     max-width: 80vw;
   }
 }
+.room-connection {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  padding: 14px 20px;
+  border: 1px solid #ffffff22;
+  border-radius: 12px;
+  background: #171220d9;
+  color: #e8dcf2;
+  font-size: 14px;
+}
+.room-connection p {
+  margin: 4px 0;
+  line-height: 1.55;
+}
+.room-connection summary {
+  cursor: pointer;
+  margin-top: 8px;
+  color: #efb16a;
+}
+.room-connection details p {
+  overflow-wrap: anywhere;
+}

@@ -124,6 +124,25 @@ export default function ModeLobby({ onBack }: { onBack: () => void }) {
           {session.message}
         </div>
       )}
+      {session.connectionStep && (
+        <section className="room-connection" aria-label="Connection status">
+          <p role="status">{session.connectionStep}</p>
+          {session.status === "connecting" && (
+            <p>Keep both game tabs open while the connection is established.</p>
+          )}
+          <details>
+            <summary>Connection details</summary>
+            <p>{session.connectionDetails}</p>
+            {!window.isSecureContext && (
+              <p>
+                For the most reliable test on phones, open the published HTTPS
+                game link on both devices. Local HTTP previews have limited
+                browser APIs.
+              </p>
+            )}
+          </details>
+        </section>
+      )}
       {!inLobby && (
         <>
           <div className="mode-profile">
@@ -276,14 +295,14 @@ export default function ModeLobby({ onBack }: { onBack: () => void }) {
                 </p>
                 <button
                   className="secondary"
-                  disabled={session.status === "connecting"}
+                  disabled={!session.signalingReady}
                   onClick={() => copy(lobby.code, "Code")}
                 >
                   <Copy size={15} /> Copy code
                 </button>
                 <button
                   className="secondary"
-                  disabled={session.status === "connecting"}
+                  disabled={!session.signalingReady}
                   onClick={() => {
                     const url = new URL(location.href);
                     url.search = "";

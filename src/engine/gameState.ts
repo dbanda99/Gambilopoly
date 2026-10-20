@@ -1,5 +1,6 @@
 import { BOARD } from "./boardData";
 import type { GameState, Token } from "./types";
+import { randomId } from "../utils/id";
 export function createGame(
   names: {
     id?: string;
@@ -20,7 +21,7 @@ export function createGame(
       "Choose 2–4 players with different tokens and a name each.",
     );
   return {
-    id: crypto.randomUUID(),
+    id: randomId(),
     players: names.map((p, i) => ({
       id: p.id ?? `player-${i}`,
       name: p.name.trim().slice(0, 24),
