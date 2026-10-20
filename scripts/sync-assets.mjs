@@ -14,6 +14,14 @@ mkdirSync(output, { recursive: true });
 if (!existsSync("2d-textures"))
   throw new Error("Missing board source folder: 2d-textures");
 cpSync("2d-textures", path.join(output, "board"), { recursive: true });
+for (const [source, destination] of [
+  ["title-background-img.png", "title-background.webp"],
+  ["game-text-title.png", "game-text-title.webp"],
+]) {
+  await sharp(`2d-textures/title/${source}`)
+    .webp({ quality: 92 })
+    .toFile(path.join(output, "board", "title", destination));
+}
 await sharp("2d-textures/map-center/cementary-background.png")
   .resize(2048, 2048, { withoutEnlargement: true })
   .webp({ quality: 90 })

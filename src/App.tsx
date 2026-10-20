@@ -3,12 +3,15 @@ import { ArrowRight, BookOpen, Moon, X } from "lucide-react";
 import Lobby from "./components/Lobby";
 import PropertyCard from "./components/PropertyCard";
 import GameScreen from "./components/GameScreen";
+import TitleScreen from "./components/TitleScreen";
 import { useGame } from "./store";
 import type { Action } from "./engine/types";
 import { movementDuration, type Movement } from "./presentation/motion";
 import { DICE_SECONDS, type RollPresentation } from "./presentation/diceRoll";
 export default function App() {
   const { state, dispatch, error, clearError, rollEvent } = useGame();
+  const [frontScreen, setFrontScreen] = useState<"title" | "setup">("title");
+  const [introSeen, setIntroSeen] = useState(false);
   const [rules, setRules] = useState(false),
     [selected, setSelected] = useState<number | null>(null),
     [topDown, setTopDown] = useState(false),
@@ -62,7 +65,9 @@ export default function App() {
     [dispatch, player?.id],
   );
   return (
-    <div className={`app ${state ? "is-playing" : ""}`}>
+    <div
+      className={`app ${state ? "is-playing" : frontScreen === "title" ? "is-title" : "is-setup"}`}
+    >
       <header className="header">
         <a
           href="./"
@@ -70,6 +75,10 @@ export default function App() {
           onClick={(e) => {
             e.preventDefault();
             if (state) setLeave(true);
+            else {
+              setIntroSeen(true);
+              setFrontScreen("title");
+            }
           }}
         >
           <span className="brand-icon">🎃</span>
@@ -89,7 +98,29 @@ export default function App() {
         </nav>
       </header>
       {!state ? (
-        <Lobby />
+        frontScreen === "title" ? (
+          <TitleScreen
+            returnToMenu={introSeen}
+            onPlay={() => {
+              setIntroSeen(true);
+              setFrontScreen("setup");
+            }}
+            onInstructions={() => setRules(true)}
+          />
+        ) : (
+          <>
+            <button
+              className="text-button setup-back"
+              onClick={() => {
+                setIntroSeen(true);
+                setFrontScreen("title");
+              }}
+            >
+              ← Back to title
+            </button>
+            <Lobby />
+          </>
+        )
       ) : (
         <GameScreen
           state={state}

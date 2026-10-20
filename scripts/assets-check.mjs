@@ -1,3 +1,4 @@
+import { openSetup } from "./open-setup.mjs";
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 mkdirSync("test-results", { recursive: true });
@@ -29,6 +30,7 @@ const assert = (condition, message) => {
 };
 try {
   await page.goto("http://localhost:5173");
+  await openSetup(page);
   await page.getByRole("button", { name: "4 players", exact: true }).click();
   for (const [player, token] of [
     [1, "Rattle"],
@@ -107,6 +109,7 @@ try {
     localStorage.setItem("gambilopoly-local-v1", JSON.stringify(save));
   });
   await page.reload();
+  await openSetup(page);
   await page.getByRole("button", { name: "Resume saved local game" }).click();
   await page
     .getByRole("button", { name: "Roll the dice", exact: true })
@@ -131,6 +134,7 @@ try {
     localStorage.setItem("gambilopoly-local-v1", JSON.stringify(save));
   });
   await page.reload();
+  await openSetup(page);
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "Resume saved local game" }).click();
   await page.waitForTimeout(1100);

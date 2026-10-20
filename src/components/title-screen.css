@@ -1,0 +1,246 @@
+.title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  background: #000;
+  color: white;
+  isolation: isolate;
+}
+.title-backdrop,
+.title-vignette {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  pointer-events: none;
+}
+.title-backdrop {
+  object-fit: cover;
+  object-position: center;
+  z-index: -2;
+}
+.title-vignette {
+  background: linear-gradient(
+    180deg,
+    #0002,
+    transparent 36%,
+    #0c041548 78%,
+    #0009
+  );
+  z-index: -1;
+}
+.title-screen .is-visible {
+  opacity: 1;
+}
+.studio-credit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 38px;
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+.studio-credit img {
+  width: clamp(100px, 13vw, 180px);
+  height: auto;
+}
+.studio-credit p {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  font-size: clamp(16px, 2vw, 24px);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-align: center;
+  padding: 0 20px;
+}
+.title-composition {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(28px, 6vh, 75px) 24px 72px;
+  gap: clamp(28px, 5vh, 64px);
+}
+.game-title-art {
+  opacity: 0;
+  margin: 0;
+  width: min(1000px, 82vw);
+  flex: none;
+  transition: opacity 1.2s ease;
+  filter: drop-shadow(0 8px 20px #000b);
+}
+.game-title-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.title-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 1s ease;
+  margin: auto 0;
+}
+.title-menu button {
+  border: 1px solid #d9c3ed2e;
+  border-radius: 10px;
+  background: #110b1d9c;
+  color: white;
+  text-shadow: 0 2px 9px #000;
+  font-size: clamp(25px, 3.2vw, 43px);
+  font-weight: 400;
+  min-height: 66px;
+  width: clamp(235px, 26vw, 350px);
+  padding: 8px 28px;
+  box-shadow: 0 8px 28px #0002;
+  backdrop-filter: blur(5px);
+  transition:
+    background 0.25s,
+    border-color 0.25s,
+    transform 0.25s;
+}
+.title-menu button:hover {
+  background: #45244fc9;
+  border-color: #efbc85;
+  transform: translateY(-2px);
+}
+.title-menu button:active {
+  transform: translateY(0);
+}
+.title-copyright {
+  opacity: 0;
+  transition: opacity 1s ease;
+  position: absolute;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 20px;
+  right: 20px;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(11px, 1.5vw, 18px);
+  text-shadow: 0 2px 6px #000;
+}
+.skip-title {
+  position: absolute;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  border: 1px solid #ffffff35;
+  border-radius: 24px;
+  padding: 10px 18px;
+  background: #0005;
+  color: #d9d4df;
+  font-size: 12px;
+  animation: title-button-in 0.6s ease both;
+}
+@keyframes title-button-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.title-screen.is-leaving::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: black;
+  animation: title-button-in 0.65s ease both;
+}
+.title-credits {
+  text-align: center;
+}
+.title-credits > img {
+  width: 60px;
+  height: auto;
+  margin: 12px auto 0;
+}
+.title-credits p {
+  line-height: 1.7;
+}
+.setup-back {
+  margin-bottom: 20px;
+}
+.app.is-setup {
+  animation: setup-in 0.65s ease both;
+}
+@keyframes setup-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.app.is-title > .header,
+.app.is-title > .footer {
+  display: none;
+}
+@media (orientation: portrait) {
+  .title-composition {
+    padding-top: max(12vh, 50px);
+    gap: 20px;
+    padding-bottom: 95px;
+  }
+  .game-title-art {
+    width: 94vw;
+  }
+  .title-menu {
+    gap: 20px;
+  }
+  .title-backdrop {
+    object-position: 58% center;
+  }
+  .title-copyright span {
+    display: none;
+  }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .title-composition {
+    padding: 15px 20px 40px;
+    gap: 8px;
+  }
+  .game-title-art {
+    width: min(520px, 60vw);
+  }
+  .title-menu {
+    gap: 8px;
+  }
+  .title-menu button {
+    min-height: 43px;
+    font-size: 25px;
+    padding: 3px 25px;
+  }
+  .title-copyright {
+    font-size: 10px;
+    bottom: 8px;
+  }
+  .studio-credit {
+    gap: 15px;
+  }
+  .studio-credit img {
+    width: 85px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-screen * {
+    transition-duration: 0.15s !important;
+  }
+  .title-menu button:hover {
+    transform: none;
+  }
+  .title-screen.is-leaving::after,
+  .app.is-setup {
+    animation-duration: 0.1s;
+  }
+}

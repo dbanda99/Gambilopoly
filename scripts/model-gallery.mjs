@@ -1,3 +1,4 @@
+import { openSetup } from "./open-setup.mjs";
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 mkdirSync("test-results", { recursive: true });
@@ -14,6 +15,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 try {
   await page.goto("http://localhost:5173");
+  await openSetup(page);
   const result = await page.evaluate(async () => {
     const [T, { GLTFLoader }, { MeshoptDecoder }] = await Promise.all([
       import("/node_modules/three/build/three.module.js"),

@@ -1,3 +1,4 @@
+import { openSetup } from "./open-setup.mjs";
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 mkdirSync("test-results", { recursive: true });
@@ -39,6 +40,7 @@ const reopen = async () => {
     fixture,
   );
   await page.goto("http://localhost:5173");
+  await openSetup(page);
   await page.getByRole("button", { name: "Resume saved local game" }).click();
 };
 const tick = async (ms) => {
@@ -47,6 +49,7 @@ const tick = async (ms) => {
 };
 try {
   await page.goto("http://localhost:5173");
+  await openSetup(page);
   await page.evaluate(async () => {
     const { createGame } = await import("/src/engine/gameState.ts");
     const s = createGame(
@@ -68,6 +71,7 @@ try {
     );
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await openSetup(page);
   await page.getByRole("button", { name: "Resume saved local game" }).click();
   await page.waitForTimeout(1800);
   await page.clock.install({ time: new Date("2030-01-01T00:00:00Z") });

@@ -1,3 +1,4 @@
+import { openSetup } from "./open-setup.mjs";
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 mkdirSync("test-results", { recursive: true });
@@ -19,6 +20,7 @@ const assert = (condition, message) => {
 };
 try {
   await page.goto("http://localhost:5173");
+  await openSetup(page);
   await page.getByRole("button", { name: "4 players", exact: true }).click();
   await page.evaluate(() => {
     window.__introduced = [];
@@ -124,6 +126,7 @@ try {
     "Mobile starting order panel overlaps roster or leaves screen",
   );
   await page.reload();
+  await openSetup(page);
   await page.getByRole("button", { name: "Resume saved local game" }).click();
   await page.getByRole("region", { name: "Starting order" }).waitFor();
   assert(errors.length === 0, errors.join("\n"));

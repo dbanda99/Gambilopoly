@@ -59,3 +59,8 @@ Open an owned property from a player badge to build or sell. A complete unmortga
 The supplied house and inn models are optimized into assets/tabletop. The ivory die is extracted from Dice.obj without its display ground or alternate dice. Every roll throws these dice inside the board center, lets them settle, then lifts the matching result to the screen center before movement.
 
 Chance and Community Chest draws show the supplied back artwork, flip to the matching text template, and display the engine-selected effect. Continue resolves the effect once. A pending draw is saved so resuming cannot skip or duplicate it.
+
+## Title screen
+
+Launch begins on black, fades in the Gambito logo and studio credit, fades back to black, then reveals the supplied title background, transparent title lettering, and menu in order. Play opens setup (including saved-game resume); Instructions and Credits open overlays. Escape or Skip intro jumps to the menu. Returning from setup opens the menu directly. Reduced-motion mode shortens fades. Title images are preloaded and converted to WebP during asset preparation; original PNGs stay unchanged.
+

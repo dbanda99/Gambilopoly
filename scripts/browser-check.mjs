@@ -1,3 +1,4 @@
+import { openSetup } from "./open-setup.mjs";
 import { chromium } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 mkdirSync("test-results", { recursive: true });
@@ -19,6 +20,7 @@ const assert = (condition, message) => {
 };
 try {
   await page.goto("http://localhost:5173");
+  await openSetup(page);
   await page.getByRole("heading", { name: "Gather your ghouls" }).waitFor();
   await page.screenshot({
     path: "test-results/desktop-lobby.png",
@@ -90,6 +92,7 @@ try {
     "Tokens not unique",
   );
   await page.reload();
+  await openSetup(page);
   await page.getByRole("button", { name: "Resume saved local game" }).click();
   await page.getByRole("button", { name: "Roll the dice" }).waitFor();
   assert(
@@ -140,6 +143,7 @@ try {
     localStorage.setItem("gambilopoly-local-v1", JSON.stringify(save));
   });
   await page.reload();
+  await openSetup(page);
   await page.getByRole("button", { name: "Resume saved local game" }).click();
   await page.getByRole("region", { name: "Property purchase" }).waitFor();
   for (const [name, width, height] of [
