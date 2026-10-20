@@ -9,11 +9,15 @@ export default function OpeningSequence({
   onAction,
   reducedMotion,
   diceActive,
+  canAct = true,
+  controlsIntro = true,
 }: {
   state: GameState;
   onAction: (type: Exclude<Action["type"], "build" | "sell-building">) => void;
   reducedMotion: boolean;
   diceActive: boolean;
+  canAct?: boolean;
+  controlsIntro?: boolean;
 }) {
   const o = state.opening!;
   const [revealed, setRevealed] = useState(o.history.length);
@@ -56,7 +60,11 @@ export default function OpeningSequence({
             ? "Forty spaces. A few friends. A fortune waiting to be made."
             : `${TOKENS[spotlight.token].label} · $1,500 · Ready to haunt the neighborhood`}
         </p>
-        <button className="intro-skip" onClick={() => onAction("skip-intro")}>
+        <button
+          className="intro-skip"
+          disabled={!controlsIntro}
+          onClick={() => onAction("skip-intro")}
+        >
           <SkipForward size={15} /> Skip camera tour
         </button>
       </section>
@@ -119,7 +127,7 @@ export default function OpeningSequence({
       </div>
       <button
         className="game-action"
-        disabled={rolling}
+        disabled={rolling || (o.stage === "ready" ? !controlsIntro : !canAct)}
         onClick={() => onAction(o.stage === "ready" ? "begin" : "opening-roll")}
       >
         <Dices size={18} />

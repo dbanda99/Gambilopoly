@@ -14,6 +14,11 @@ const player = z.object({
     "sparks",
     "warps",
   ]),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+  bot: z.boolean().optional(),
   position: integer.max(39),
   money: integer,
   propertyIds: z.array(integer.max(39)),
@@ -24,6 +29,7 @@ const player = z.object({
 const snapshot = z.object({
   version: z.literal(1),
   state: z.object({
+    mode: z.enum(["single", "online", "local"]).optional(),
     id: z.string(),
     players: z.array(player).min(2).max(4),
     currentPlayerIndex: integer.max(3),

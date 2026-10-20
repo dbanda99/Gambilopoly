@@ -4,6 +4,8 @@ export interface Player {
   id: string;
   name: string;
   token: Token;
+  color?: string;
+  bot?: boolean;
   position: number;
   money: number;
   propertyIds: number[];
@@ -53,6 +55,7 @@ export interface OpeningState {
   winnerId: string | null;
 }
 export interface GameState {
+  mode?: "single" | "online" | "local";
   id: string;
   players: Player[];
   currentPlayerIndex: number;

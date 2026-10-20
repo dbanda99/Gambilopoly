@@ -32,10 +32,11 @@ The first milestone is local play. The overall prototype is complete only after 
 
 ## Phase 4 — Private multiplayer
 
-- [ ] PeerJS room creation and joining with codes; unique identity/token assignment; host starts lobby.
-- [ ] Zod protocol validation, identity-bound actions, revision checks, host-only engine and state broadcasts.
-- [ ] Connection health, rejection messages, reconnect and host snapshot recovery UX.
-- [ ] Configurable signaling/STUN/TURN; clear behavior when host leaves.
+- [x] PeerJS room creation and joining with codes; unique identity/token assignment; host starts lobby.
+- [x] Zod protocol validation, identity-bound actions, revision checks, host-only engine and state broadcasts.
+- [x] Lobby profiles/colors, guest readiness, host kicks, bot turns and visible disconnect pause.
+- [ ] Automatic reconnect and host snapshot recovery UX.
+- [x] Configurable signaling/ICE servers; visible pause when host or player disconnects.
 - [ ] Verify one PC + one phone, then four clients across different networks. Confirm identical state revisions, balances and ownership.
 - Acceptance: four friends join, illegal/spoofed/duplicate actions are rejected, all devices agree, failures are visible. Hosting the website alone does not provide signaling or TURN.
 

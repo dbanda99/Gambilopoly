@@ -1,7 +1,13 @@
 import { BOARD } from "./boardData";
 import type { GameState, Token } from "./types";
 export function createGame(
-  names: { name: string; token: Token }[],
+  names: {
+    id?: string;
+    name: string;
+    token: Token;
+    color?: string;
+    bot?: boolean;
+  }[],
   options: { skipOpening?: boolean } = {},
 ): GameState {
   if (
@@ -16,9 +22,11 @@ export function createGame(
   return {
     id: crypto.randomUUID(),
     players: names.map((p, i) => ({
-      id: `player-${i}`,
+      id: p.id ?? `player-${i}`,
       name: p.name.trim().slice(0, 24),
       token: p.token,
+      ...(p.color ? { color: p.color } : {}),
+      ...(p.bot ? { bot: true } : {}),
       position: 0,
       money: 1500,
       propertyIds: [],
@@ -34,7 +42,7 @@ export function createGame(
           stage: "tour",
           spotlightIndex: 0,
           round: 1,
-          candidateIds: names.map((_, i) => `player-${i}`),
+          candidateIds: names.map((p, i) => p.id ?? `player-${i}`),
           rolls: {},
           history: [],
           winnerId: null,

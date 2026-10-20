@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, BookOpen, Moon, X } from "lucide-react";
-import Lobby from "./components/Lobby";
+import ModeLobby from "./components/ModeLobby";
 import PropertyCard from "./components/PropertyCard";
 import GameScreen from "./components/GameScreen";
 import TitleScreen from "./components/TitleScreen";
@@ -8,8 +8,11 @@ import { useGame } from "./store";
 import type { Action } from "./engine/types";
 import { movementDuration, type Movement } from "./presentation/motion";
 import { DICE_SECONDS, type RollPresentation } from "./presentation/diceRoll";
+import { useSession, leaveSession } from "./multiplayer/session";
+import { useAutomation } from "./multiplayer/useAutomation";
 export default function App() {
   const { state, dispatch, error, clearError, rollEvent } = useGame();
+  const session = useSession();
   const [frontScreen, setFrontScreen] = useState<"title" | "setup">("title");
   const [introSeen, setIntroSeen] = useState(false);
   const [rules, setRules] = useState(false),
@@ -59,6 +62,14 @@ export default function App() {
     return () => document.body.classList.remove("in-game");
   }, [!!state]);
   const player = state?.players[state.currentPlayerIndex];
+  const canAct =
+    !session.mode ||
+    (session.status === "playing" &&
+      !session.pending &&
+      player?.id === session.me &&
+      !player.bot);
+  const controlsIntro = session.mode !== "guest";
+  useAutomation(state, moving || diceActive);
   const action = useCallback(
     (type: Exclude<Action["type"], "build" | "sell-building">) =>
       dispatch({ type, playerId: player!.id }),
@@ -108,22 +119,25 @@ export default function App() {
             onInstructions={() => setRules(true)}
           />
         ) : (
-          <>
-            <button
-              className="text-button setup-back"
-              onClick={() => {
-                setIntroSeen(true);
-                setFrontScreen("title");
-              }}
-            >
-              ← Back to title
-            </button>
-            <Lobby />
-          </>
+          <ModeLobby
+            onBack={() => {
+              setIntroSeen(true);
+              setFrontScreen("title");
+            }}
+          />
         )
       ) : (
         <GameScreen
           state={state}
+          canAct={canAct}
+          controlsIntro={controlsIntro}
+          modeLabel={
+            session.mode === "single"
+              ? "SINGLE PLAYER"
+              : session.mode
+                ? "PRIVATE MULTIPLAYER"
+                : "LOCAL PASS & PLAY"
+          }
           moving={moving || diceActive}
           diceActive={diceActive}
           rollEvent={rollEvent}
@@ -147,7 +161,7 @@ export default function App() {
           id={selected}
           state={state}
           onClose={() => setSelected(null)}
-          interactionDisabled={moving || diceActive}
+          interactionDisabled={moving || diceActive || !canAct}
         />
       )}
       {error && (
@@ -156,6 +170,17 @@ export default function App() {
           <button aria-label="Dismiss error" onClick={clearError}>
             <X size={16} />
           </button>
+        </div>
+      )}
+      {state && session.mode && (
+        <div
+          className={`session-indicator ${session.status === "paused" ? "is-paused" : ""}`}
+          role="status"
+        >
+          {session.message ||
+            (session.status === "paused"
+              ? "Connection lost · Match paused"
+              : `${session.mode === "single" ? "Single Player" : `Room ${session.lobby?.code}`} · ${canAct ? "Your turn" : `Waiting for ${player?.name}`}`)}
         </div>
       )}
       {rules && (
@@ -192,14 +217,17 @@ export default function App() {
                 Doubles grant another roll. Three doubles send you to the
                 Dungeon. Roll doubles or pay $50 to leave.
               </li>
-              <li>Take turns on this device. The last solvent player wins.</li>
+              <li>
+                Play against bots or invite friends to a hosted room. The last
+                solvent player wins.
+              </li>
             </ol>
             <div className="alpha-note">
               <strong>First playable · local alpha</strong>
               <p>
                 Purchase passes skip auctions. Cards currently apply simple cash
-                effects. Mortgages, trades, debt negotiation and online room
-                codes arrive in later phases.
+                effects. Mortgages, trades and debt negotiation arrive in later
+                phases.
               </p>
             </div>
             <button className="primary" onClick={() => setRules(false)}>
@@ -225,29 +253,44 @@ export default function App() {
             </button>
             <h2 id="options-title">Match options</h2>
             <p>
-              Your local match saves after every action. Starting another match
-              replaces that save when you enter the neighborhood.
+              {session.mode === "host"
+                ? "You are hosting. Leaving disconnects your guests and ends the hosted session."
+                : session.mode === "guest"
+                  ? "Leaving disconnects you from this match."
+                  : "Your match saves after every action. Starting another match replaces that save."}
             </p>
             <button
               className="primary"
               onClick={() => {
-                useGame.setState({ state: null });
+                if (session.mode) leaveSession();
+                else useGame.setState({ state: null });
+                setFrontScreen("setup");
+                setSelected(null);
                 setLeave(false);
               }}
             >
-              Set up a new game <ArrowRight size={16} />
+              {session.mode === "guest"
+                ? "Leave match"
+                : session.mode === "host"
+                  ? "End hosted match"
+                  : "Set up a new game"}{" "}
+              <ArrowRight size={16} />
             </button>
-            {state?.status === "playing" && state.phase !== "opening" && (
-              <button
-                className="resume"
-                onClick={() => {
-                  action("resign");
-                  setLeave(false);
-                }}
-              >
-                Current player: concede match
-              </button>
-            )}
+            {state?.status === "playing" &&
+              state.phase !== "opening" &&
+              canAct &&
+              !moving &&
+              !diceActive && (
+                <button
+                  className="resume"
+                  onClick={() => {
+                    action("resign");
+                    setLeave(false);
+                  }}
+                >
+                  Current player: concede match
+                </button>
+              )}
             <button className="resume" onClick={() => setLeave(false)}>
               Keep playing
             </button>

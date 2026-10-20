@@ -5,10 +5,12 @@ export default function CardReveal({
   card,
   onContinue,
   reducedMotion,
+  canContinue = true,
 }: {
   card: PendingCard;
   onContinue: () => void;
   reducedMotion: boolean;
+  canContinue?: boolean;
 }) {
   const [face, setFace] = useState(false),
     [ready, setReady] = useState(false);
@@ -90,10 +92,14 @@ export default function CardReveal({
         <button
           ref={button}
           className="game-action card-continue"
-          disabled={!ready}
+          disabled={!ready || !canContinue}
           onClick={onContinue}
         >
-          {ready ? "Continue" : "Revealing your card…"}
+          {ready
+            ? canContinue
+              ? "Continue"
+              : "Waiting for the player…"
+            : "Revealing your card…"}
         </button>
       </div>
     </div>

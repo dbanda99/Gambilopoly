@@ -41,7 +41,7 @@ export default function PlayerToken({
         (1 - Math.exp(-delta * 7));
     ref.current.scale.setScalar(scale);
   });
-  const color = TOKENS[player.token].color;
+  const color = player.color ?? TOKENS[player.token].color;
   return (
     <group ref={ref}>
       {spotlight && (

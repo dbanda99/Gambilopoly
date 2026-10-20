@@ -27,7 +27,7 @@ try {
       attributeFilter: ["data-stage"],
     });
   });
-  await page.goto("http://localhost:5173", { waitUntil: "domcontentloaded" });
+  await page.goto("http://localhost:5174", { waitUntil: "domcontentloaded" });
   await page.locator('.title-screen[data-stage="logo"]').waitFor();
   assert(
     await page
@@ -99,8 +99,8 @@ try {
     await page.screenshot({ path: `test-results/title-menu-${width}.png` });
   }
   await page.getByRole("button", { name: "Play", exact: true }).click();
-  await page.getByRole("heading", { name: "Gather your ghouls" }).waitFor();
-  await page.getByRole("button", { name: "Back to title" }).click();
+  await page.getByRole("heading", { name: "Select mode" }).waitFor();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.locator('.title-screen[data-stage="menu"]').waitFor();
   assert(
     (await page.getByRole("button", { name: "Skip intro" }).count()) === 0,

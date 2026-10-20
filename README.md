@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. Open the URL printed by Vite. For a phone on the same Wi-Fi, use the computer's LAN address and Vite port; this shares the app, but each device currently runs its own local match.
+On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. Open the URL printed by Vite. For a phone on the same Wi-Fi, use the computer's LAN address and Vite port; create a Multiplayer room on one device and join its code on the others.
 
 ```sh
 npm test
@@ -21,7 +21,7 @@ npm run preview
 
 ## Current playable scope
 
-- Local pass-and-play for 2–4 players, names and unique selectable tokens.
+- Single Player against 1–3 bots; private WebRTC multiplayer for 2–4 people, with code/link invitations, unique characters/colors, readiness and host kicking. Legacy local saves still resume.
 - 40 selectable 3D spaces, orbit/zoom controls, angled/top camera, animated token movement, responsive HUD, and a flat-board fallback when WebGL cannot initialize.
 - Gameplay fills the browser viewport. Player badges, dice, turn actions, purchase cards, camera controls, match options, history, and property inspection are overlaid on the game. Portrait phones move the player badges above the board; landscape uses a right-hand stack. Browser fullscreen is optional where supported.
 - New matches begin with a skippable board tour and a close-up introduction of each token, followed by engine-validated starting rolls. Every player rolls two dice; only tied highest rollers reroll. The winner starts, then turns continue clockwise. Opening progress is saved. Existing matches resume without restarting the introduction.
@@ -30,13 +30,13 @@ npm run preview
 - Simplified bankruptcy and last-player-standing victory; concede available from match options.
 - Versioned browser-local snapshot saved after every accepted action; resume from setup.
 
-This is a local alpha. Passing a purchase skips an auction. Cards currently choose cash effects randomly with replacement. Unpayable debt immediately bankrupts a player and transfers assets to the creditor or bank. No mortgages, trading, deck cycling, room codes, online synchronization, or host recovery yet. It does **not** yet satisfy the full traditional-rules or two-device multiplayer acceptance criteria.
+This is a playable alpha. Passing a purchase skips an auction. Cards currently choose cash effects randomly with replacement. Unpayable debt immediately bankrupts a player and transfers assets to the creditor or bank. No mortgages, trading, deck cycling, or host recovery yet. It does **not** yet satisfy the full traditional-rules or physical-device multiplayer acceptance criteria.
 
 ## Architecture
 
 `src/engine` owns all game transitions and imports only types/configuration. `applyAction(state, action, random?)` rejects illegal actions and returns a new revision without mutating the input. Tests inject randomness; runtime uses browser crypto. Rendering never generates rolls or calculates economic outcomes. `src/store.ts` connects the local controller to React and saves snapshots. `src/three` displays state and forwards property selection. Property and cash-card data live in `src/data`.
 
-The multiplayer transport belongs in `src/multiplayer` in Phase 4: bind a connection to a player identity, validate the message schema and revision, let only the host call `applyAction`, and broadcast snapshots. Never trust a client-provided identity, dice result, money value, or state snapshot.
+`src/multiplayer/session.ts` hosts the engine and binds each WebRTC connection to a player. Zod validates requests; `authority.ts` checks the bound identity and revision before `applyAction`. Guests send actions and receive snapshots; they do not generate dice or economic outcomes. Duplicate request IDs are ignored. Only the host advances introductions and runs bots.
 
 See [ROADMAP.md](ROADMAP.md) for milestones and acceptance gates. Official framework references: [Vite](https://vite.dev/guide/), [React Three Fiber Canvas](https://r3f.docs.pmnd.rs/api/canvas), [animation hooks](https://r3f.docs.pmnd.rs/api/hooks).
 
@@ -64,3 +64,12 @@ Chance and Community Chest draws show the supplied back artwork, flip to the mat
 
 Launch begins on black, fades in the Gambito logo and studio credit, fades back to black, then reveals the supplied title background, transparent title lettering, and menu in order. Play opens setup (including saved-game resume); Instructions and Credits open overlays. Escape or Skip intro jumps to the menu. Returning from setup opens the menu directly. Reduced-motion mode shortens fades. Title images are preloaded and converted to WebP during asset preparation; original PNGs stay unchanged.
 
+## Game modes and networking
+
+Play opens Single Player, Multiplayer (host), or Join a Game. Choose a name before entering. In the lobby, each human edits their own character and property color; the host can customize or remove bots, and kick guests. Guests mark Ready before the host can start. Character/color reservations are validated on the host. Single Player bots roll, buy, resolve cards, build and end turns automatically. Bot matches and old local matches can resume from the mode screen. Online snapshots are retained locally but are not offered as offline resumes.
+
+The default transport uses PeerJS cloud signaling and WebRTC data channels. The host must remain open. A dropped participant pauses the match; automatic rejoining, host migration and recovery are not implemented. Networks that require a TURN relay need appropriate relay configuration. Website access remains separate from room invitations; visitors still need permission to open a private published site.
+
+Optional Vite build variables: VITE_PEER_HOST, VITE_PEER_PORT, VITE_PEER_PATH and VITE_PEER_SECURE select a different signaling server; VITE_ICE_SERVERS accepts a JSON array of browser RTCIceServer entries. Values bundled with Vite are visible to browsers. Use short-lived relay credentials when supplying TURN. No environment variables are needed for the default cloud signaling service.
+
+Verification: npm test covers rules, bots, lobby authorization, protocol validation and snapshots. For local WebRTC browser checks, run node scripts/peer-test-server.mjs, start Vite with VITE_PEER_HOST=127.0.0.1 and VITE_PEER_PORT=9000, then run node scripts/modes-check.mjs. The check defaults to port 5174; set GAME_TEST_URL to the Vite URL. This verifies isolated Chrome clients, not separate physical devices or restrictive network traversal.

@@ -78,6 +78,9 @@ export default function GameScreen({
   onOptions,
   onRules,
   onAction,
+  canAct = true,
+  controlsIntro = true,
+  modeLabel = "LOCAL PASS & PLAY",
 }: {
   state: GameState;
   moving: boolean;
@@ -90,6 +93,9 @@ export default function GameScreen({
   onOptions: () => void;
   onRules: () => void;
   onAction: (type: Exclude<Action["type"], "build" | "sell-building">) => void;
+  canAct?: boolean;
+  controlsIntro?: boolean;
+  modeLabel?: string;
 }) {
   const [history, setHistory] = useState(false),
     [inspected, setInspected] = useState<string | null>(null),
@@ -119,13 +125,13 @@ export default function GameScreen({
     [state.id, state.opening?.stage, state.opening?.spotlightIndex],
   );
   useEffect(() => {
-    if (!cinematic) return;
+    if (!cinematic || !controlsIntro) return;
     const duration = reducedMotion
       ? 350
       : (cinematic.stage === "tour" ? TOUR_SECONDS : PLAYER_SECONDS) * 1000;
     const timer = setTimeout(() => onAction("advance-intro"), duration);
     return () => clearTimeout(timer);
-  }, [cinematic, onAction, reducedMotion]);
+  }, [cinematic, onAction, reducedMotion, controlsIntro]);
   const [diceRolling, setDiceRolling] = useState(false);
   useEffect(() => {
     if (!motion) return;
@@ -226,7 +232,7 @@ export default function GameScreen({
       </div>
       <div className="game-wordmark" aria-hidden="true">
         gambilopoly<span>.</span>
-        <small>LOCAL PASS & PLAY</small>
+        <small>{modeLabel}</small>
       </div>
       <aside className="game-roster" aria-label="Players">
         {state.players.map((player, index) => (
@@ -234,7 +240,9 @@ export default function GameScreen({
             key={player.id}
             className={`player-badge ${index === activeIndex && state.status === "playing" ? "is-current" : ""} ${player.bankrupt ? "is-bankrupt" : ""}`}
             style={
-              { "--player-color": TOKENS[player.token].color } as CSSProperties
+              {
+                "--player-color": player.color ?? TOKENS[player.token].color,
+              } as CSSProperties
             }
             onClick={() => {
               setInspected(inspected === player.id ? null : player.id);
@@ -264,7 +272,11 @@ export default function GameScreen({
                       : state.opening?.stage === "order"
                         ? "ROLL FOR FIRST"
                         : "MEET THE GHOULS"
-                    : "YOUR TURN"}
+                    : canAct
+                      ? "YOUR TURN"
+                      : player.bot
+                        ? "BOT TURN"
+                        : "PLAYING"}
                 </span>
               )}
           </button>
@@ -370,7 +382,7 @@ export default function GameScreen({
           <div className="purchase-actions">
             <button
               className="game-action"
-              disabled={current.money < tile.price!}
+              disabled={!canAct || current.money < tile.price!}
               onClick={() => onAction("buy")}
             >
               Buy for ${tile.price}
@@ -379,6 +391,7 @@ export default function GameScreen({
             <button
               className="game-action game-action-secondary"
               onClick={() => onAction("pass")}
+              disabled={!canAct}
             >
               Pass for now
             </button>
@@ -396,6 +409,8 @@ export default function GameScreen({
           onAction={onAction}
           reducedMotion={reducedMotion}
           diceActive={diceActive}
+          canAct={canAct}
+          controlsIntro={controlsIntro}
         />
       ) : (
         <section
@@ -469,6 +484,7 @@ export default function GameScreen({
                         <button
                           className="game-action"
                           onClick={() => onAction("roll")}
+                          disabled={!canAct}
                         >
                           <Dices size={19} />
                           Roll the dice
@@ -478,6 +494,7 @@ export default function GameScreen({
                           <button
                             className="bail-action"
                             onClick={() => onAction("bail")}
+                            disabled={!canAct}
                           >
                             Pay $50 bail
                           </button>
@@ -487,6 +504,7 @@ export default function GameScreen({
                       <button
                         className="game-action"
                         onClick={() => onAction("end")}
+                        disabled={!canAct}
                       >
                         {state.extraTurn ? "Doubles! Roll again" : "End turn"}
                         <ArrowRight size={19} />
@@ -510,6 +528,7 @@ export default function GameScreen({
           card={state.pendingCard}
           reducedMotion={reducedMotion}
           onContinue={() => onAction("ack-card")}
+          canContinue={canAct}
         />
       )}
       <div className="game-camera-hint">

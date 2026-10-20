@@ -115,7 +115,9 @@ export default function GameBoard({
               <BoardTile
                 key={space.id}
                 space={space}
-                ownerColor={owner ? TOKENS[owner.token].color : undefined}
+                ownerColor={
+                  owner ? (owner.color ?? TOKENS[owner.token].color) : undefined
+                }
                 onSelect={() => onSelect(space.id)}
               />
             );
