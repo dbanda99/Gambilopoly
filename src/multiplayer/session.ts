@@ -1,4 +1,10 @@
-import Peer, { type DataConnection, type PeerOptions } from "peerjs";
+import type { PeerOptions } from "peerjs";
+import {
+  createRoomPeer,
+  usesLocalRooms,
+  type RoomPeer,
+  type RoomConnection,
+} from "./transport";
 import { create } from "zustand";
 import {
   lobbySchema,
@@ -57,12 +63,12 @@ const initial: Session = {
   signalingReady: false,
 };
 export const useSession = create<Session>(() => ({ ...initial }));
-let peer: Peer | null = null,
-  upstream: DataConnection | null = null,
+let peer: RoomPeer | null = null,
+  upstream: RoomConnection | null = null,
   game: GameState | null = null;
 let generation = 0,
   busyUntil = 0;
-const connections = new Map<string, DataConnection>(),
+const connections = new Map<string, RoomConnection>(),
   banned = new Set<string>();
 const report = (e: unknown) =>
   useSession.setState({
@@ -107,8 +113,13 @@ function connectionDetails(stage: string, error?: unknown) {
     connectionStep: stage,
     connectionDetails: [
       `Stage: ${stage}`,
-      `Signaling: ${import.meta.env.VITE_PEER_HOST ? "custom server" : "PeerJS cloud"}`,
-      `ICE servers: ${import.meta.env.VITE_ICE_SERVERS ? "custom configuration" : "PeerJS default STUN and shared TURN"}`,
+      `Transport: ${usesLocalRooms ? "local preview WebSocket (same Vite server)" : "WebRTC"}`,
+      ...(!usesLocalRooms
+        ? [
+            `Signaling: ${import.meta.env.VITE_PEER_HOST ? "custom server" : "PeerJS cloud"}`,
+            `ICE servers: ${import.meta.env.VITE_ICE_SERVERS ? "custom configuration" : "PeerJS default STUN and shared TURN"}`,
+          ]
+        : []),
       `Secure context: ${window.isSecureContext ? "yes" : "no (use the HTTPS game link)"}`,
       ...(type ? [`Error: ${type}`] : []),
     ].join(" · "),
@@ -121,7 +132,7 @@ function roomCode() {
     (n) => chars[n % chars.length],
   ).join("");
 }
-function send(conn: DataConnection, data: unknown) {
+function send(conn: RoomConnection, data: unknown) {
   try {
     if (conn.open) conn.send(data);
   } catch {
@@ -223,14 +234,14 @@ export function createRoom(name: string) {
     version = generation;
   try {
     connectionDetails("Registering room…");
-    peer = new Peer(`gambilopoly-${lobby.code}`, peerOptions());
+    peer = createRoomPeer(`gambilopoly-${lobby.code}`, peerOptions());
     const roomPeer = peer;
     const timer = setTimeout(() => {
       if (
         generation === version &&
         useSession.getState().status === "connecting"
       ) {
-        report(Error(timeoutMessage("signaling")));
+        report(Error(timeoutMessage("signaling", usesLocalRooms)));
         useSession.setState({ status: "error" });
         roomPeer.destroy();
       }
@@ -250,7 +261,7 @@ export function createRoom(name: string) {
     peer.on("error", (error) => {
       if (generation === version) {
         connectionDetails("Room connection error", error);
-        report(Error(connectionError(error)));
+        report(Error(connectionError(error, usesLocalRooms)));
         if (useSession.getState().status === "connecting") {
           clearTimeout(timer);
           useSession.setState({ status: "error" });
@@ -274,7 +285,7 @@ export function createRoom(name: string) {
     useSession.setState({ status: "error" });
   }
 }
-function acceptConnection(conn: DataConnection, version: number) {
+function acceptConnection(conn: RoomConnection, version: number) {
   let memberId: string | null = null;
   let lastSeen = Date.now(),
     closed = false;
@@ -446,7 +457,7 @@ export function joinRoom(value: string, name: string) {
   setActionController(requestAction);
   try {
     connectionDetails("Contacting room service…");
-    peer = new Peer(peerOptions());
+    peer = createRoomPeer(undefined, peerOptions());
     const guestPeer = peer;
     let timer: ReturnType<typeof setTimeout>;
     let heartbeat: ReturnType<typeof setInterval> | undefined;
@@ -476,7 +487,7 @@ export function joinRoom(value: string, name: string) {
       clearTimeout(timer);
       stage = next;
       timer = setTimeout(
-        () => fail(timeoutMessage(stage)),
+        () => fail(timeoutMessage(stage, usesLocalRooms)),
         CONNECTION_TIMEOUT[stage],
       );
     };
@@ -487,7 +498,11 @@ export function joinRoom(value: string, name: string) {
         useSession.getState().status !== "connecting"
       )
         return;
-      connectionDetails("Opening peer connection…");
+      connectionDetails(
+        usesLocalRooms
+          ? "Opening local room connection…"
+          : "Opening peer connection…",
+      );
       useSession.setState({ signalingReady: true });
       deadline("channel");
       const conn = guestPeer.connect(`gambilopoly-${code}`, {
@@ -609,13 +624,17 @@ export function joinRoom(value: string, name: string) {
       conn.on("close", () =>
         fail(
           stage === "channel"
-            ? timeoutMessage("channel")
+            ? timeoutMessage("channel", usesLocalRooms)
             : "Connection to the host was lost. The host must keep the game open.",
         ),
       );
-      conn.on("error", (error) => fail(connectionError(error), error));
+      conn.on("error", (error) =>
+        fail(connectionError(error, usesLocalRooms), error),
+      );
     });
-    peer.on("error", (error) => fail(connectionError(error), error));
+    peer.on("error", (error) =>
+      fail(connectionError(error, usesLocalRooms), error),
+    );
   } catch (e) {
     report(e);
     useSession.setState({ status: "error" });

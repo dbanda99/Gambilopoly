@@ -31,6 +31,7 @@ import {
   resumeSingle,
 } from "../multiplayer/session";
 import "./mode-lobby.css";
+import { usesLocalRooms } from "../multiplayer/transport";
 function CharacterPreview({ member }: { member: Member }) {
   return (
     <div
@@ -127,6 +128,12 @@ export default function ModeLobby({ onBack }: { onBack: () => void }) {
       {session.connectionStep && (
         <section className="room-connection" aria-label="Connection status">
           <p role="status">{session.connectionStep}</p>
+          {usesLocalRooms && (
+            <p>
+              Local preview room · Open the same Vite address and port in each
+              browser. Published games use WebRTC.
+            </p>
+          )}
           {session.status === "connecting" && (
             <p>Keep both game tabs open while the connection is established.</p>
           )}

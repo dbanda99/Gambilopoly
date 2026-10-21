@@ -269,7 +269,7 @@ try {
   await host.locator(".session-indicator.is-paused").waitFor();
   await host.close();
   console.log(
-    "PASS: actual WebRTC host/join, invite code, kick, ready gate, unique profiles, authoritative opening, movement, purchase, rent, equal snapshots and disconnect pause.",
+    "PASS: multiplayer host/join, invite code, kick, ready gate, unique profiles, authoritative opening, movement, purchase, rent, equal snapshots and disconnect pause.",
   );
   assert(errors.length === 0, errors.join("\n"));
 } catch (e) {

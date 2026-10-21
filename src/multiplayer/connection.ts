@@ -4,8 +4,21 @@ export const CONNECTION_TIMEOUT = {
   admission: 10000,
 } as const;
 
-export function connectionError(error: unknown): string {
+export function connectionError(error: unknown, local = false): string {
   const type = (error as { type?: string } | null)?.type;
+  if (local && type === "peer-unavailable")
+    return "This room is not on this preview server. Open the same Vite address and port in both browsers, then copy a fresh code from the host.";
+  if (
+    local &&
+    [
+      "network",
+      "server-error",
+      "socket-error",
+      "socket-closed",
+      "disconnected",
+    ].includes(type ?? "")
+  )
+    return "The local preview connection was lost. Keep npm run dev running, refresh both browsers, and create a new room.";
   switch (type) {
     case "peer-unavailable":
       return "This room is not registered online. Ask the host to check that their lobby says Room online, then copy its current code.";
@@ -26,7 +39,12 @@ export function connectionError(error: unknown): string {
   }
 }
 
-export function timeoutMessage(stage: keyof typeof CONNECTION_TIMEOUT): string {
+export function timeoutMessage(
+  stage: keyof typeof CONNECTION_TIMEOUT,
+  local = false,
+): string {
+  if (local && stage !== "admission")
+    return "The local preview room did not respond. Restart npm run dev and open its exact address and port in both browsers, then create a new room.";
   if (stage === "signaling")
     return "The room signaling service did not respond. Check your internet connection, VPN or network filter, then retry.";
   if (stage === "admission")
