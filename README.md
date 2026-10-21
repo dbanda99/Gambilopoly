@@ -1,5 +1,11 @@
 # Gambilopoly
 
+## GitHub Pages
+
+In GitHub, open **Settings → Pages → Build and deployment → Source → GitHub Actions**. Push these files to `main`, then wait for **Deploy Gambilopoly to Pages** in the Actions tab. The workflow installs dependencies, tests, builds the application and publishes `dist`; serving the source branch directly cannot run React/TypeScript.
+
+The Pages build sets `VITE_BASE_PATH=/<repository-name>/` (for this repository, `/Gambilopoly/`). Runtime artwork, cards and model URLs use the same base. Regular builds keep `/`, so localhost and the existing private hosted site still work. To test the Pages build in PowerShell: `$env:VITE_BASE_PATH='/Gambilopoly/'; npm.cmd run build; npm.cmd run preview`, then visit the printed origin followed by `/Gambilopoly/`. Remove that environment variable before building for a root domain. Published builds use WebRTC; local Vite preview rooms do not run on GitHub Pages.
+
 A Halloween property-trading game for 2–4 friends. React + TypeScript + React Three Fiber, with a framework-independent rules engine.
 
 ## Run locally

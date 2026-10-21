@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PendingCard } from "../engine/types";
 import "./play-effects.css";
+import { assetUrl } from "../utils/assetUrl";
 export default function CardReveal({
   card,
   onContinue,
@@ -29,7 +30,7 @@ export default function CardReveal({
           const image = new Image();
           image.onload = () => resolve();
           image.onerror = () => resolve();
-          image.src = `/assets/board/cards/${file}`;
+          image.src = assetUrl(`/assets/board/cards/${file}`);
         }),
     );
     Promise.all(images).then(() => {
@@ -67,14 +68,14 @@ export default function CardReveal({
             className="card-side card-back"
             aria-hidden={face}
             style={{
-              backgroundImage: `url(/assets/board/cards/${prefix}-back-design.png)`,
+              backgroundImage: `url(${assetUrl(`/assets/board/cards/${prefix}-back-design.png`)})`,
             }}
           />
           <div
             className="card-side card-front"
             aria-hidden={!face}
             style={{
-              backgroundImage: `url(/assets/board/cards/${prefix}-text-design.png)`,
+              backgroundImage: `url(${assetUrl(`/assets/board/cards/${prefix}-text-design.png`)})`,
             }}
           >
             <span className="eyebrow">A MESSAGE FROM THE NEIGHBORHOOD</span>

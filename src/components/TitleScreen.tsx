@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useReducedMotion } from "../presentation/useReducedMotion";
 import "./title-screen.css";
+import { assetUrl } from "../utils/assetUrl";
 const assets = {
-  studio: "/assets/board/logo/gambito-logo.png",
-  background: "/assets/board/title/title-background.webp",
-  title: "/assets/board/title/game-text-title.webp",
+  studio: assetUrl("/assets/board/logo/gambito-logo.png"),
+  background: assetUrl("/assets/board/title/title-background.webp"),
+  title: assetUrl("/assets/board/title/game-text-title.webp"),
 };
 const cues = [
   [500, "logo"],

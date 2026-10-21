@@ -4,6 +4,7 @@ import { Box3, Mesh, Vector3 } from "three";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { Token } from "../engine/types";
 import assets from "../generated/assets.json";
+import { assetUrl } from "../utils/assetUrl";
 
 class ModelBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -56,7 +57,7 @@ export default function PlayerModel({
   token: Token;
   fallback: ReactNode;
 }) {
-  const url = assets.models[token];
+  const url = assets.models[token] ? assetUrl(assets.models[token]) : undefined;
   if (!url) return <>{fallback}</>;
   return (
     <ModelBoundary fallback={fallback}>

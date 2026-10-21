@@ -1,4 +1,5 @@
 import type { BoardSpace } from "../engine/types";
+import { assetUrl } from "../utils/assetUrl";
 const groups: Record<string, string> = {
   copper: "brown",
   ice: "light-blue",
@@ -15,10 +16,12 @@ const corners: Record<number, string> = {
   20: "free-parking",
   30: "go-to-prison",
 };
-export const CENTER_ART = "/assets/board/map-center/cemetery-background.webp";
+export const CENTER_ART = assetUrl(
+  "/assets/board/map-center/cemetery-background.webp",
+);
 export function artworkFor(space: BoardSpace): string {
   if (space.type === "corner")
-    return `/assets/board/corners/${corners[space.id]}-corner.png`;
+    return assetUrl(`/assets/board/corners/${corners[space.id]}-corner.png`);
   const template =
     space.type === "property"
       ? `${groups[space.group!]}`
@@ -35,7 +38,7 @@ export function artworkFor(space: BoardSpace): string {
               : space.id === 4
                 ? "income-tax"
                 : "luxury-tax";
-  return `/assets/board/properties/${template}-property.png`;
+  return assetUrl(`/assets/board/properties/${template}-property.png`);
 }
 // All tiles using the same template share a single browser image request.
 const images = new Map<string, Promise<HTMLImageElement>>();

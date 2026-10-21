@@ -3,8 +3,11 @@ import { useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { boardPosition, TILE_DEPTH } from "../engine/boardData";
+import { assetUrl } from "../utils/assetUrl";
 function Building({ inn = false }: { inn?: boolean }) {
-  const { scene } = useGLTF(`/assets/tabletop/${inn ? "inn" : "house"}.glb`);
+  const { scene } = useGLTF(
+    assetUrl(`/assets/tabletop/${inn ? "inn" : "house"}.glb`),
+  );
   const model = useMemo(() => {
     const object = clone(scene),
       box = new Box3().setFromObject(object),

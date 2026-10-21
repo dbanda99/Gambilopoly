@@ -1,3 +1,4 @@
+import { assetUrl } from "../utils/assetUrl";
 import {
   useCallback,
   useEffect,
@@ -208,7 +209,7 @@ function MoneyEffect({
           <img
             className="flying-note"
             key={i}
-            src="/assets/board/money/money-note.webp"
+            src={assetUrl("/assets/board/money/money-note.webp")}
             alt=""
             style={
               {
@@ -260,7 +261,7 @@ export default function GameFeedback({
 }) {
   useEffect(() => {
     const image = new Image();
-    image.src = "/assets/board/money/money-note.webp";
+    image.src = assetUrl("/assets/board/money/money-note.webp");
   }, []);
   const feedback = useGame((s) => s.feedback),
     [queue, setQueue] = useState<GameNotice[]>([]),

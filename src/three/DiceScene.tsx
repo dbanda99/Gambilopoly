@@ -13,6 +13,7 @@ import {
   type RollPresentation,
 } from "../presentation/diceRoll";
 import { smooth } from "../presentation/motion";
+import { assetUrl } from "../utils/assetUrl";
 function Die({
   roll,
   index,
@@ -22,7 +23,7 @@ function Die({
   index: number;
   reducedMotion: boolean;
 }) {
-  const gltf = useGLTF("/assets/tabletop/dice.glb"),
+  const gltf = useGLTF(assetUrl("/assets/tabletop/dice.glb")),
     scene = useMemo(() => clone(gltf.scene), [gltf.scene]);
   const ref = useRef<Group>(null);
   const { camera, size } = useThree();
@@ -123,4 +124,4 @@ export default function DiceScene({
     </Suspense>
   );
 }
-useGLTF.preload("/assets/tabletop/dice.glb");
+useGLTF.preload(assetUrl("/assets/tabletop/dice.glb"));
