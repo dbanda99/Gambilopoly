@@ -17,6 +17,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RELAY_CONFIGURED: ${{ secrets.VITE_ICE_SERVERS != '' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -32,6 +35,27 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_ICE_SERVERS: ${{ secrets.VITE_ICE_SERVERS }}
+      - name: Install browser for relay verification
+        if: env.RELAY_CONFIGURED == 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Verify relay-only lobby and chat before publishing
+        if: env.RELAY_CONFIGURED == 'true'
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          GAME_TEST_URL: http://127.0.0.1:5175/${{ github.event.repository.name }}/
+          TEST_WEBRTC: "1"
+          FORCE_RELAY: "1"
+          ROOM_TEST_BROWSER: bundled
+        run: |
+          npm run preview -- --port 5175 --strictPort &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent "$GAME_TEST_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/cross-browser-room-check.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

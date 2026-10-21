@@ -2,6 +2,7 @@ import Peer, { type PeerOptions } from "peerjs";
 import { LocalPeer } from "./localPeer";
 
 export interface RoomConnection {
+  peerConnection?: RTCPeerConnection;
   peer: string;
   open: boolean;
   send(data: unknown): void;

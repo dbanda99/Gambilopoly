@@ -1,5 +1,7 @@
 # Gambilopoly
 
+For friends joining across the internet, see [online multiplayer and TURN setup](docs/ONLINE-MULTIPLAYER.md). GitHub Pages now reads the `VITE_ICE_SERVERS` repository secret during deployment; without a configured relay, only direct connections are available.
+
 ## GitHub Pages
 
 In GitHub, open **Settings → Pages → Build and deployment → Source → GitHub Actions**. Push these files to `main`, then wait for **Deploy Gambilopoly to Pages** in the Actions tab. The workflow installs dependencies, tests, builds the application and publishes `dist`; serving the source branch directly cannot run React/TypeScript.
@@ -82,7 +84,7 @@ To test real WebRTC during development, set `VITE_ROOM_TRANSPORT=webrtc` before 
 
 Connection setup has separate deadlines for signaling (25 seconds), the peer channel (45 seconds), and lobby admission (10 seconds after the channel opens). The host also waits for the channel before timing the guest's hello; heartbeats never time out a guest during ICE negotiation. The lobby shows connection progress and expandable diagnostics, distinguishing an unavailable room from signaling and WebRTC failures. Invite-copy buttons wait for signaling registration and are disabled while the host reconnects.
 
-HTTP previews opened by local IP do not expose `crypto.randomUUID()` in current Chrome. All match, player, request and chat IDs use a cryptographic `getRandomValues()` UUID fallback on those origins. HTTPS remains preferable for physical-device tests. Same-Wi-Fi networks can still isolate devices or block WebRTC; the fallback does not bypass router/firewall restrictions. The installed PeerJS release includes default STUN and shared TURN entries; their presence is not a guarantee of relay availability.
+HTTP previews opened by local IP do not expose `crypto.randomUUID()` in current Chrome. All match, player, request and chat IDs use a cryptographic `getRandomValues()` UUID fallback on those origins. HTTPS remains preferable for physical-device tests. Same-Wi-Fi networks can still isolate devices or block WebRTC; the fallback does not bypass router/firewall restrictions. The game no longer relies on the bundled PeerJS TURN hostnames, which returned no DNS addresses in verification; configure a working provider for relay fallback.
 
 Run `node scripts/lan-room-check.mjs` with the Vite server on port 5174 to verify localhost-to-LAN-IP and LAN-IP-to-localhost joins and guest chat. These are isolated browser contexts on one computer, not a substitute for testing the actual phone or a separate network. `src/multiplayer/session.test.ts` checks delayed channel opening, independent deadlines, host admission errors and cancelled attempts.
 

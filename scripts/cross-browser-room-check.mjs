@@ -4,9 +4,10 @@ const url = process.env.GAME_TEST_URL || "http://localhost:5174";
 const browsers = [];
 const errors = [];
 const testWebRTC = process.env.TEST_WEBRTC === "1";
+const forceRelay = process.env.FORCE_RELAY === "1";
 async function open(channel) {
   const browser = await chromium.launch({
-    channel,
+    channel: channel === "bundled" ? undefined : channel,
     headless: true,
     args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
@@ -15,28 +16,33 @@ async function open(channel) {
   if (!testWebRTC)
     await page.route(/https?:\/\/[^/]*peerjs\.com\//, (route) => route.abort());
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.addInitScript(() => {
-    window.connectionTrace = [];
-    const Original = RTCPeerConnection;
-    window.RTCPeerConnection = class extends Original {
-      constructor(...args) {
-        super(...args);
-        const log = (value) => window.connectionTrace.push(value);
-        this.addEventListener("signalingstatechange", () =>
-          log(`SDP: ${this.signalingState}`),
-        );
-        this.addEventListener("iceconnectionstatechange", () =>
-          log(`ICE: ${this.iceConnectionState}`),
-        );
-        this.addEventListener("icecandidate", (e) =>
-          log(`candidate: ${e.candidate?.type ?? "complete"}`),
-        );
-        this.addEventListener("icecandidateerror", (e) =>
-          log(`candidate error: ${e.errorCode}`),
-        );
-      }
-    };
-  });
+  await page.addInitScript(
+    ({ forceRelay }) => {
+      window.connectionTrace = [];
+      const Original = RTCPeerConnection;
+      window.RTCPeerConnection = class extends Original {
+        constructor(...args) {
+          super(
+            forceRelay ? { ...args[0], iceTransportPolicy: "relay" } : args[0],
+          );
+          const log = (value) => window.connectionTrace.push(value);
+          this.addEventListener("signalingstatechange", () =>
+            log(`SDP: ${this.signalingState}`),
+          );
+          this.addEventListener("iceconnectionstatechange", () =>
+            log(`ICE: ${this.iceConnectionState}`),
+          );
+          this.addEventListener("icecandidate", (e) =>
+            log(`candidate: ${e.candidate?.type ?? "complete"}`),
+          );
+          this.addEventListener("icecandidateerror", (e) =>
+            log(`candidate error: ${e.errorCode}`),
+          );
+        }
+      };
+    },
+    { forceRelay },
+  );
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.locator(".title-screen").waitFor();
   await page.keyboard.press("Escape");
@@ -49,10 +55,13 @@ const choose = (p, name) =>
     .filter({ has: p.getByRole("heading", { name, exact: true }) })
     .click();
 try {
-  for (const [hostBrowser, guestBrowser] of [
-    ["chrome", "msedge"],
-    ["msedge", "chrome"],
-  ]) {
+  const combinations = process.env.ROOM_TEST_BROWSER
+    ? [[process.env.ROOM_TEST_BROWSER, process.env.ROOM_TEST_BROWSER]]
+    : [
+        ["chrome", "msedge"],
+        ["msedge", "chrome"],
+      ];
+  for (const [hostBrowser, guestBrowser] of combinations) {
     const host = await open(hostBrowser),
       guest = await open(guestBrowser);
     try {
@@ -85,7 +94,7 @@ try {
       await host.getByText("Hello across browsers", { exact: true }).waitFor();
       assert.equal(await host.locator(".lobby-seat").count(), 2);
       console.log(
-        `PASS: ${hostBrowser} host → ${guestBrowser} guest: join and chat`,
+        `PASS: ${hostBrowser} host → ${guestBrowser} guest: join and chat${forceRelay ? " with relay-only ICE" : ""}`,
       );
     } catch (e) {
       for (const [role, page] of [

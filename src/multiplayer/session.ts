@@ -35,6 +35,8 @@ import {
   timeoutMessage,
 } from "./connection";
 import { randomId } from "../utils/id";
+import { iceConfig } from "./iceConfig";
+import { observeConnection } from "./connectionTrace";
 type Mode = "single" | "host" | "guest" | null;
 interface Session {
   mode: Mode;
@@ -48,6 +50,7 @@ interface Session {
   connectionStep: string;
   connectionDetails: string;
   signalingReady: boolean;
+  networkDetails: string;
 }
 const initial: Session = {
   mode: null,
@@ -61,6 +64,7 @@ const initial: Session = {
   connectionStep: "",
   connectionDetails: "",
   signalingReady: false,
+  networkDetails: "",
 };
 export const useSession = create<Session>(() => ({ ...initial }));
 let peer: RoomPeer | null = null,
@@ -102,9 +106,9 @@ function peerOptions(): PeerOptions {
           secure: import.meta.env.VITE_PEER_SECURE === "true",
         }
       : {}),
-    ...(import.meta.env.VITE_ICE_SERVERS
-      ? { config: { iceServers: JSON.parse(import.meta.env.VITE_ICE_SERVERS) } }
-      : {}),
+    config: {
+      iceServers: iceConfig(import.meta.env.VITE_ICE_SERVERS).iceServers,
+    },
   };
 }
 function connectionDetails(stage: string, error?: unknown) {
@@ -117,13 +121,20 @@ function connectionDetails(stage: string, error?: unknown) {
       ...(!usesLocalRooms
         ? [
             `Signaling: ${import.meta.env.VITE_PEER_HOST ? "custom server" : "PeerJS cloud"}`,
-            `ICE servers: ${import.meta.env.VITE_ICE_SERVERS ? "custom configuration" : "PeerJS default STUN and shared TURN"}`,
+            `Relay: ${relayConfigured() ? "configured (connectivity not yet verified)" : "not configured; direct connections only"}`,
           ]
         : []),
       `Secure context: ${window.isSecureContext ? "yes" : "no (use the HTTPS game link)"}`,
       ...(type ? [`Error: ${type}`] : []),
     ].join(" · "),
   });
+}
+function relayConfigured() {
+  try {
+    return iceConfig(import.meta.env.VITE_ICE_SERVERS).hasRelay;
+  } catch {
+    return false;
+  }
 }
 function roomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -286,6 +297,9 @@ export function createRoom(name: string) {
   }
 }
 function acceptConnection(conn: RoomConnection, version: number) {
+  observeConnection(conn, (networkDetails) => {
+    if (version === generation) useSession.setState({ networkDetails });
+  });
   let memberId: string | null = null;
   let lastSeen = Date.now(),
     closed = false;
@@ -510,6 +524,9 @@ export function joinRoom(value: string, name: string) {
         serialization: "json",
       });
       upstream = conn;
+      observeConnection(conn, (networkDetails) => {
+        if (version === generation) useSession.setState({ networkDetails });
+      });
       let lastHost = Date.now();
       conn.on("iceStateChanged", (state) => {
         if (

@@ -140,6 +140,7 @@ export default function ModeLobby({ onBack }: { onBack: () => void }) {
           <details>
             <summary>Connection details</summary>
             <p>{session.connectionDetails}</p>
+            {session.networkDetails && <p>{session.networkDetails}</p>}
             {!window.isSecureContext && (
               <p>
                 For the most reliable test on phones, open the published HTTPS
